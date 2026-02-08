@@ -155,17 +155,15 @@ pnpm run check
 
 ## Docs worth reading
 
-- `docs/extensions.md`
-- `docs/development.md`
-- `docs/packages.md`
-- `examples/extensions/`
-
-(all from your Pi install under `@mariozechner/pi-coding-agent`)
+- [extensions.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
+- [development.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/development.md)
+- [packages.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md)
+- [examples/extensions](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/examples/extensions)
 
 ## Share your extension
 
 Add the `pi-package` keyword to `package.json` (already included) and publish to npm.
-Your extension will appear in the [Pi package gallery](https://shittycodingagent.ai/packages)
+Your extension will appear in the [Pi package gallery](https://pi.dev/packages)
 and on [npmjs.com](https://www.npmjs.com/search?q=keywords%3Api-package).
 
 Add `pi.video` or `pi.image` in `package.json` for a gallery preview

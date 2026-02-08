@@ -5,20 +5,25 @@ import { stdin, stdout } from "node:process";
 const rl = createInterface({ input: stdin, output: stdout });
 
 try {
-  const extensionName = await ask("Extension name", "my-pi-extension");
-  const packageName = await ask("npm package name", "my-pi-extension");
-  const description = await ask(
-    "Description",
-    "Starter template for building robust Pi extensions"
-  );
-  const command = normalizeCommand(await ask("Command name", "myext"));
-  const toolName = await ask("Tool name", `${command}_echo`);
-  const stateType = await ask("State entry type", `${command}:state`);
+  const current = await readCurrentTemplateValues();
+
+  const extensionName = await ask("Extension name", current.extensionName);
+  const packageName = await ask("npm package name", current.packageName);
+  const description = await ask("Description", current.description);
+  const command = normalizeCommand(await ask("Command name", current.command));
+
+  const defaultToolName =
+    current.toolName === `${current.command}_echo` ? `${command}_echo` : current.toolName;
+  const defaultStateType =
+    current.stateType === `${current.command}:state` ? `${command}:state` : current.stateType;
+
+  const toolName = await ask("Tool name", defaultToolName);
+  const stateType = await ask("State entry type", defaultStateType);
 
   await updateConstants({ extensionName, command, toolName, stateType });
   await updatePackage({ packageName, description, extensionName });
-  await updateStarterNames(command, toolName);
-  await updateTestNames(command, toolName);
+  await updateStarterNames(current, { command, toolName });
+  await updateTestNames(current, { command, toolName });
 
   stdout.write("\nTemplate setup complete.\n");
   stdout.write("Run `pnpm run check` next.\n");
@@ -40,6 +45,31 @@ function normalizeCommand(value) {
     .replace(/-+$/, "");
 
   return cleaned.length > 0 ? cleaned : "myext";
+}
+
+async function readCurrentTemplateValues() {
+  const constants = await readFile("src/constants.ts", "utf8");
+  const pkg = JSON.parse(await readFile("package.json", "utf8"));
+
+  const command = readConst(constants, "EXTENSION_COMMAND", "myext");
+
+  return {
+    extensionName: readConst(constants, "EXTENSION_NAME", "my-pi-extension"),
+    command,
+    toolName: readConst(constants, "TOOL_NAME", `${command}_echo`),
+    stateType: readConst(constants, "STATE_ENTRY_TYPE", `${command}:state`),
+    packageName:
+      typeof pkg.name === "string" && pkg.name.trim().length > 0 ? pkg.name : "my-pi-extension",
+    description:
+      typeof pkg.description === "string" && pkg.description.trim().length > 0
+        ? pkg.description
+        : "Starter template for building robust Pi extensions",
+  };
+}
+
+function readConst(content, constName, fallback) {
+  const match = content.match(new RegExp(`export const ${constName} = "([^"]*)";`));
+  return match?.[1] ?? fallback;
 }
 
 async function updateConstants({ extensionName, command, toolName, stateType }) {
@@ -68,7 +98,7 @@ async function updatePackage({ packageName, description, extensionName }) {
   await writeFile(path, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 
-async function updateStarterNames(command, toolName) {
+async function updateStarterNames(previous, next) {
   const files = [
     "starters/event-only.ts",
     "starters/tool-only.ts",
@@ -79,11 +109,29 @@ async function updateStarterNames(command, toolName) {
 
   for (const path of files) {
     let content = await readFile(path, "utf8");
-    content = content.replace(/"myext_echo"/g, `"${toolName}"`);
-    content = content.replace(/"myext"/g, `"${command}"`);
-    content = content.replace(/\/myext/g, `/${command}`);
+    content = replaceTemplateNames(content, previous, next);
     await writeFile(path, content);
   }
+}
+
+function replaceTemplateNames(content, previous, next) {
+  const toolCandidates = Array.from(new Set([previous.toolName, "myext_echo"]));
+  const commandCandidates = Array.from(new Set([previous.command, "myext"]));
+
+  let updated = content;
+
+  for (const tool of toolCandidates) {
+    if (tool === next.toolName) continue;
+    updated = updated.split(`"${tool}"`).join(`"${next.toolName}"`);
+  }
+
+  for (const command of commandCandidates) {
+    if (command === next.command) continue;
+    updated = updated.split(`"${command}"`).join(`"${next.command}"`);
+    updated = updated.split(`/${command}`).join(`/${next.command}`);
+  }
+
+  return updated;
 }
 
 function replaceConst(content, constName, value) {
@@ -92,14 +140,12 @@ function replaceConst(content, constName, value) {
   return content.replace(pattern, `$1"${escaped}";`);
 }
 
-async function updateTestNames(command, toolName) {
+async function updateTestNames(previous, next) {
   const files = ["test/starters.test.ts"];
 
   for (const path of files) {
     let content = await readFile(path, "utf8");
-    content = content.replace(/"myext_echo"/g, `"${toolName}"`);
-    content = content.replace(/"myext"/g, `"${command}"`);
-    content = content.replace(/\/myext/g, `/${command}`);
+    content = replaceTemplateNames(content, previous, next);
     await writeFile(path, content);
   }
 }

@@ -22,6 +22,7 @@ export default function extensionTemplate(pi: ExtensionAPI) {
   }
 
   pi.on("session_start", (_event, ctx) => syncState(ctx));
+  pi.on("session_switch", (_event, ctx) => syncState(ctx));
   pi.on("session_tree", (_event, ctx) => syncState(ctx));
   pi.on("session_fork", (_event, ctx) => syncState(ctx));
 
