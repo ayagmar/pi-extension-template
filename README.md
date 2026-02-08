@@ -54,9 +54,10 @@ Then use `/reload`.
 Not all Pi extensions need commands or tools. Pick a starter that matches your use case:
 
 - `starters/event-only.ts` → listeners/interceptors/guards (`tool_call`, `tool_result`, shortcut)
-- `starters/tool-only.ts` → model-callable tools + result interception
+- `starters/tool-only.ts` → model-callable tools + result interception + custom rendering
 - `starters/command-only.ts` → slash command UX + a small interactive picker + shortcut
 - `starters/hybrid.ts` → command + tool + event hooks + shortcut
+- `starters/ui-only.ts` → status line, widget, custom dashboard via `ctx.ui.custom()`, shortcut
 
 Replace the default `src/index.ts` with your chosen starter:
 
@@ -160,6 +161,15 @@ pnpm run check
 - `examples/extensions/`
 
 (all from your Pi install under `@mariozechner/pi-coding-agent`)
+
+## Share your extension
+
+Add the `pi-package` keyword to `package.json` (already included) and publish to npm.
+Your extension will appear in the [Pi package gallery](https://shittycodingagent.ai/packages)
+and on [npmjs.com](https://www.npmjs.com/search?q=keywords%3Api-package).
+
+Add `pi.video` or `pi.image` in `package.json` for a gallery preview
+(see [packages.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md#gallery-metadata)).
 
 ## License
 

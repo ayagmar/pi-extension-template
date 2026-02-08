@@ -7,33 +7,23 @@ import {
   STATE_ENTRY_TYPE,
   TOOL_NAME,
 } from "./constants.js";
-import { buildHelpText, parseCommandArgs } from "./commands.js";
+import { buildHelpText, parseSubcommand } from "./commands.js";
 import { buildEchoText } from "./tool.js";
 import type { ExtensionState } from "./types.js";
 
 export default function extensionTemplate(pi: ExtensionAPI) {
   let state: ExtensionState = { label: DEFAULT_LABEL };
 
-  pi.on("session_start", (_event, ctx) => {
+  function syncState(ctx: Pick<ExtensionContext, "sessionManager" | "hasUI" | "ui">): void {
     state = restoreFromContext(ctx);
     if (ctx.hasUI) {
       ctx.ui.setStatus(EXTENSION_COMMAND, `${EXTENSION_NAME}: ${state.label}`);
     }
-  });
+  }
 
-  pi.on("session_tree", (_event, ctx) => {
-    state = restoreFromContext(ctx);
-    if (ctx.hasUI) {
-      ctx.ui.setStatus(EXTENSION_COMMAND, `${EXTENSION_NAME}: ${state.label}`);
-    }
-  });
-
-  pi.on("session_fork", (_event, ctx) => {
-    state = restoreFromContext(ctx);
-    if (ctx.hasUI) {
-      ctx.ui.setStatus(EXTENSION_COMMAND, `${EXTENSION_NAME}: ${state.label}`);
-    }
-  });
+  pi.on("session_start", (_event, ctx) => syncState(ctx));
+  pi.on("session_tree", (_event, ctx) => syncState(ctx));
+  pi.on("session_fork", (_event, ctx) => syncState(ctx));
 
   pi.registerCommand(EXTENSION_COMMAND, {
     description: "Starter command for your extension",
@@ -43,26 +33,32 @@ export default function extensionTemplate(pi: ExtensionAPI) {
       const matches = options.filter((option) => option.startsWith(safePrefix));
       return matches.length > 0 ? matches.map((value) => ({ value, label: value })) : null;
     },
-    handler: (args, ctx) => {
-      const command = parseCommandArgs(args);
+    handler: (args, ctx): Promise<void> => {
+      const { name, rest } = parseSubcommand(args);
 
-      if (command.action === "help") {
-        emitInfo(ctx, buildHelpText(EXTENSION_COMMAND));
-        return Promise.resolve();
-      }
+      switch (name) {
+        case "status":
+          notify(ctx, `Label: ${state.label}`);
+          return Promise.resolve();
 
-      if (command.action === "status") {
-        emitInfo(ctx, `Label: ${state.label}`);
-        return Promise.resolve();
-      }
+        case "set-label": {
+          if (!rest) {
+            notify(ctx, buildHelpText());
+            return Promise.resolve();
+          }
+          state = { label: rest };
+          pi.appendEntry(STATE_ENTRY_TYPE, state);
+          if (ctx.hasUI) {
+            ctx.ui.setStatus(EXTENSION_COMMAND, `${EXTENSION_NAME}: ${state.label}`);
+          }
+          notify(ctx, `Label updated to: ${state.label}`);
+          return Promise.resolve();
+        }
 
-      state = { label: command.value };
-      pi.appendEntry(STATE_ENTRY_TYPE, state);
-      if (ctx.hasUI) {
-        ctx.ui.setStatus(EXTENSION_COMMAND, `${EXTENSION_NAME}: ${state.label}`);
+        default:
+          notify(ctx, buildHelpText());
+          return Promise.resolve();
       }
-      emitInfo(ctx, `Label updated to: ${state.label}`);
-      return Promise.resolve();
     },
   });
 
@@ -78,23 +74,22 @@ export default function extensionTemplate(pi: ExtensionAPI) {
       const text = buildEchoText(params);
       return Promise.resolve({
         content: [{ type: "text", text }],
-        details: {
-          length: text.length,
-        },
+        details: { length: text.length },
       });
     },
   });
 }
 
-function emitInfo(
+/** Notify via TUI when available, otherwise console. */
+function notify(
   ctx: { hasUI: boolean; ui: { notify: (message: string, level: "info") => void } },
   message: string
 ): void {
   if (ctx.hasUI) {
     ctx.ui.notify(message, "info");
-    return;
+  } else {
+    console.log(message);
   }
-  console.log(message);
 }
 
 function restoreFromContext(ctx: Pick<ExtensionContext, "sessionManager">): ExtensionState {
@@ -106,15 +101,8 @@ function restoreState(
 ): ExtensionState | undefined {
   for (let i = entries.length - 1; i >= 0; i -= 1) {
     const entry = entries[i];
-    if (entry?.type !== "custom") {
-      continue;
-    }
-    if (entry.customType !== STATE_ENTRY_TYPE) {
-      continue;
-    }
-    if (isExtensionState(entry.data)) {
-      return entry.data;
-    }
+    if (entry?.type !== "custom" || entry.customType !== STATE_ENTRY_TYPE) continue;
+    if (isExtensionState(entry.data)) return entry.data;
   }
   return undefined;
 }

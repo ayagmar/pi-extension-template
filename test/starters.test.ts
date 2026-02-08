@@ -5,6 +5,7 @@ import eventOnly from "../starters/event-only.js";
 import toolOnly from "../starters/tool-only.js";
 import commandOnly from "../starters/command-only.js";
 import hybrid from "../starters/hybrid.js";
+import uiOnly from "../starters/ui-only.js";
 
 interface RegisteredCommand {
   handler: (args: string, ctx: unknown) => Promise<void>;
@@ -126,6 +127,23 @@ void test("hybrid starter registers command/tool/shortcut and command affects to
 
   await shortcut?.handler(ctx);
   assert.ok(ctx.notifications.some((line) => line.includes("Hybrid starter active=false")));
+});
+
+void test("ui-only starter registers command/shortcut and tracks events", () => {
+  const harness = createHarness();
+  uiOnly(harness.pi);
+
+  const command = harness.commands.get("myext");
+  const shortcut = harness.shortcuts.get("ctrl+shift+m");
+  const sessionStart = harness.eventHandlers.get("session_start");
+  const turnStart = harness.eventHandlers.get("turn_start");
+  const turnEnd = harness.eventHandlers.get("turn_end");
+
+  assert.ok(command);
+  assert.ok(shortcut);
+  assert.ok(sessionStart);
+  assert.ok(turnStart);
+  assert.ok(turnEnd);
 });
 
 function createHarness(): Harness {

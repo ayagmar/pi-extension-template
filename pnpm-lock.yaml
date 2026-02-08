@@ -8,9 +8,15 @@ importers:
 
   .:
     devDependencies:
+      '@mariozechner/pi-ai':
+        specifier: ^0.52.8
+        version: 0.52.8(ws@8.19.0)(zod@3.25.76)
       '@mariozechner/pi-coding-agent':
         specifier: ^0.52.8
         version: 0.52.8(ws@8.19.0)(zod@3.25.76)
+      '@mariozechner/pi-tui':
+        specifier: ^0.52.8
+        version: 0.52.8
       '@sinclair/typebox':
         specifier: ^0.34.48
         version: 0.34.48

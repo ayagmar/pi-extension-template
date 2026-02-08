@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "smoke-test": "node --import=tsx ./scripts/smoke-test.mjs",
     "test": "node --import=tsx --test ./test/*.test.ts",
-    "check": "npm run typecheck && npm run smoke-test && npm run test && npm run lint && npm run format:check"
+    "check": "tsc --noEmit -p tsconfig.json && node --import=tsx ./scripts/smoke-test.mjs && node --import=tsx --test ./test/*.test.ts && eslint . --max-warnings=0 && prettier --check ."
   },
   "pi": {
     "extensions": [
@@ -33,11 +33,15 @@
     "image": "https://placehold.co/1200x630/png?text=My+Pi+Extension"
   },
   "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
     "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*",
     "@sinclair/typebox": "*"
   },
   "devDependencies": {
+    "@mariozechner/pi-ai": "^0.52.8",
     "@mariozechner/pi-coding-agent": "^0.52.8",
+    "@mariozechner/pi-tui": "^0.52.8",
     "@sinclair/typebox": "^0.34.48",
     "@types/node": "^22.19.10",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
@@ -48,5 +52,8 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  }
 }

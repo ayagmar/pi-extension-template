@@ -6,48 +6,42 @@ export default function commandOnlyExtension(pi: ExtensionAPI) {
   pi.registerCommand("myext", {
     description: "Toggle and inspect extension state",
     getArgumentCompletions: (prefix) => {
-      const options = ["status", "enable", "disable", "mode", "help"];
+      const options = ["status", "enable", "disable", "mode"];
       const safePrefix = prefix.toLowerCase();
       const matches = options.filter((option) => option.startsWith(safePrefix));
       return matches.length > 0 ? matches.map((value) => ({ value, label: value })) : null;
     },
     handler: async (args, ctx) => {
-      const subcommand = args.trim().toLowerCase();
+      switch (args.trim().toLowerCase()) {
+        case "enable":
+          enabled = true;
+          notify(ctx, "Extension enabled");
+          return;
 
-      if (subcommand === "enable") {
-        enabled = true;
-        notify(ctx, "Extension enabled");
-        return;
-      }
+        case "disable":
+          enabled = false;
+          notify(ctx, "Extension disabled");
+          return;
 
-      if (subcommand === "disable") {
-        enabled = false;
-        notify(ctx, "Extension disabled");
-        return;
-      }
+        case "status":
+          notify(ctx, `Enabled: ${enabled}`);
+          return;
 
-      if (subcommand === "status") {
-        notify(ctx, `Enabled: ${enabled}`);
-        return;
-      }
-
-      if (subcommand === "mode") {
-        if (!ctx.hasUI) {
-          notify(ctx, "Mode picker is only available in interactive mode");
+        case "mode": {
+          if (!ctx.hasUI) {
+            notify(ctx, "Mode picker is only available in interactive mode");
+            return;
+          }
+          const nextMode = await ctx.ui.select("Choose mode", ["enabled", "disabled"]);
+          if (!nextMode) return;
+          enabled = nextMode === "enabled";
+          notify(ctx, `Mode set to: ${nextMode}`);
           return;
         }
 
-        const nextMode = await ctx.ui.select("Choose mode", ["enabled", "disabled"]);
-        if (!nextMode) {
-          return;
-        }
-
-        enabled = nextMode === "enabled";
-        notify(ctx, `Mode set to: ${nextMode}`);
-        return;
+        default:
+          notify(ctx, "/myext status | enable | disable | mode");
       }
-
-      notify(ctx, "/myext status | enable | disable | mode");
     },
   });
 
@@ -66,8 +60,7 @@ function notify(
 ): void {
   if (ctx.hasUI) {
     ctx.ui.notify(message, "info");
-    return;
+  } else {
+    console.log(message);
   }
-
-  console.log(message);
 }

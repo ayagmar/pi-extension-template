@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import { StringEnum } from "@mariozechner/pi-ai";
 
 export default function hybridExtension(pi: ExtensionAPI) {
   let active = true;
@@ -13,32 +14,25 @@ export default function hybridExtension(pi: ExtensionAPI) {
   pi.registerCommand("myext", {
     description: "Show starter status or toggle active mode",
     handler: async (args, ctx) => {
-      const subcommand = args.trim().toLowerCase();
+      switch (args.trim().toLowerCase()) {
+        case "toggle":
+          active = !active;
+          notify(ctx, `Hybrid active: ${active}`);
+          return;
 
-      if (subcommand === "toggle") {
-        active = !active;
-        notify(ctx, `Hybrid active: ${active}`);
-        return;
-      }
-
-      if (subcommand === "reset") {
-        if (!ctx.hasUI) {
+        case "reset": {
+          if (ctx.hasUI) {
+            const ok = await ctx.ui.confirm("Reset state", "Set active mode back to true?");
+            if (!ok) return;
+          }
           active = true;
           notify(ctx, "Hybrid state reset");
           return;
         }
 
-        const ok = await ctx.ui.confirm("Reset state", "Set active mode back to true?");
-        if (!ok) {
-          return;
-        }
-
-        active = true;
-        notify(ctx, "Hybrid state reset");
-        return;
+        default:
+          notify(ctx, "Usage: /myext toggle | reset");
       }
-
-      notify(ctx, "Usage: /myext toggle | reset");
     },
   });
 
@@ -48,12 +42,19 @@ export default function hybridExtension(pi: ExtensionAPI) {
     description: "Echo text back to the model.",
     parameters: Type.Object({
       message: Type.String(),
+      // Use StringEnum for string enums — required for Google compatibility.
+      // Type.Union / Type.Literal won't work with Google's API.
+      format: Type.Optional(
+        StringEnum(["plain", "json"] as const, { description: "Output format" })
+      ),
     }),
     execute(_toolCallId, params) {
       const suffix = active ? "" : " (extension inactive)";
+      const body = `${params.message}${suffix}`;
+      const text = params.format === "json" ? JSON.stringify({ echo: body }) : body;
       return Promise.resolve({
-        content: [{ type: "text", text: `${params.message}${suffix}` }],
-        details: { active },
+        content: [{ type: "text", text }],
+        details: { active, format: params.format ?? "plain" },
       });
     },
   });
@@ -73,8 +74,7 @@ function notify(
 ): void {
   if (ctx.hasUI) {
     ctx.ui.notify(message, "info");
-    return;
+  } else {
+    console.log(message);
   }
-
-  console.log(message);
 }

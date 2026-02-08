@@ -18,6 +18,7 @@ try {
   await updateConstants({ extensionName, command, toolName, stateType });
   await updatePackage({ packageName, description, extensionName });
   await updateStarterNames(command, toolName);
+  await updateTestNames(command, toolName);
 
   stdout.write("\nTemplate setup complete.\n");
   stdout.write("Run `pnpm run check` next.\n");
@@ -73,6 +74,7 @@ async function updateStarterNames(command, toolName) {
     "starters/tool-only.ts",
     "starters/command-only.ts",
     "starters/hybrid.ts",
+    "starters/ui-only.ts",
   ];
 
   for (const path of files) {
@@ -88,4 +90,16 @@ function replaceConst(content, constName, value) {
   const escaped = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const pattern = new RegExp(`(export const ${constName} = )"[^"]*";`);
   return content.replace(pattern, `$1"${escaped}";`);
+}
+
+async function updateTestNames(command, toolName) {
+  const files = ["test/starters.test.ts"];
+
+  for (const path of files) {
+    let content = await readFile(path, "utf8");
+    content = content.replace(/"myext_echo"/g, `"${toolName}"`);
+    content = content.replace(/"myext"/g, `"${command}"`);
+    content = content.replace(/\/myext/g, `/${command}`);
+    await writeFile(path, content);
+  }
 }

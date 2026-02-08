@@ -52,12 +52,19 @@ export default function eventOnlyExtension(pi: ExtensionAPI) {
   pi.registerShortcut("ctrl+shift+m", {
     description: "Show event-only starter status",
     handler: (ctx) => {
-      if (ctx.hasUI) {
-        ctx.ui.notify("Event-only starter active", "info");
-      } else {
-        console.log("Event-only starter active");
-      }
+      notify(ctx, "Event-only starter active");
       return Promise.resolve();
     },
   });
+}
+
+function notify(
+  ctx: { hasUI: boolean; ui: { notify: (message: string, level: "info") => void } },
+  message: string
+): void {
+  if (ctx.hasUI) {
+    ctx.ui.notify(message, "info");
+  } else {
+    console.log(message);
+  }
 }
