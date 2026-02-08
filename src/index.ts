@@ -94,7 +94,7 @@ function notify(
 }
 
 function restoreFromContext(ctx: Pick<ExtensionContext, "sessionManager">): ExtensionState {
-  return restoreState(ctx.sessionManager.getEntries()) ?? { label: DEFAULT_LABEL };
+  return restoreState(ctx.sessionManager.getBranch()) ?? { label: DEFAULT_LABEL };
 }
 
 function restoreState(
