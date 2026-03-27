@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { MAX_MESSAGE_LENGTH } from "../src/constants.js";
 import { buildEchoText, sanitizeMessage } from "../src/tool.js";
 

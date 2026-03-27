@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { createInterface } from "node:readline/promises";
 
 const rl = createInterface({ input: stdin, output: stdout });
 

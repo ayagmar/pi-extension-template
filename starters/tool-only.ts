@@ -1,7 +1,7 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
+import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
+import { Type } from "@sinclair/typebox";
 
 export default function toolOnlyExtension(pi: ExtensionAPI) {
   pi.registerTool({
@@ -55,7 +55,7 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
       let line = theme.fg("success", "✓ ") + text;
 
       if (expanded && result.details) {
-        line += "\n" + theme.fg("dim", `  length=${result.details.length}`);
+        line += `\n${theme.fg("dim", `  length=${result.details.length}`)}`;
         line += theme.fg("dim", ` style=${result.details.style}`);
       }
 

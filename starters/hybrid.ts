@@ -1,6 +1,6 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
+import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { Type } from "@sinclair/typebox";
 
 export default function hybridExtension(pi: ExtensionAPI) {
   let active = true;

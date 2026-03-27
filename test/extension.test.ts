@@ -1,8 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import extensionTemplate from "../src/index.js";
+import test from "node:test";
+import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { EXTENSION_COMMAND, TOOL_NAME } from "../src/constants.js";
+import extensionTemplate from "../src/index.js";
 
 interface CapturedExtension {
   commandName?: string;

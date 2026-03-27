@@ -37,8 +37,8 @@ jobs:
       - name: Run tests
         run: pnpm run test
 
-      - name: Lint
+      - name: Lint (Biome)
         run: pnpm run lint
 
-      - name: Check formatting
+      - name: Check formatting (Biome)
         run: pnpm run format:check

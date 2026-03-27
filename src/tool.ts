@@ -1,5 +1,5 @@
-import type { EchoInput } from "./types.js";
 import { MAX_MESSAGE_LENGTH } from "./constants.js";
+import { type EchoInput } from "./types.js";
 
 export function sanitizeMessage(message: string): string {
   if (message.length <= MAX_MESSAGE_LENGTH) {
