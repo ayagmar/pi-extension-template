@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { Key, matchesKey } from "@mariozechner/pi-tui";
 
 const STATUS_KEY = "myext";
 
@@ -57,7 +58,7 @@ export default function uiOnlyExtension(pi: ExtensionAPI) {
             // nothing to invalidate — content is static
           },
           handleInput(data: string) {
-            if (data === "\x1b") done(); // Escape key
+            if (matchesKey(data, Key.escape)) done();
           },
         };
       });

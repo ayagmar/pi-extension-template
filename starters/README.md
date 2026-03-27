@@ -22,6 +22,8 @@ Then run:
 pnpm run check
 ```
 
+After you pick a starter for the real extension, delete the unused starter files before publishing.
+
 ## Setup order
 
 If you copy a starter into `src/index.ts` **before** running `pnpm run setup-template`,
