@@ -4,12 +4,14 @@ A practical starter for building Pi extensions that are easy to ship, test, and 
 
 ## What you get
 
-- Strict TypeScript + ESLint + Prettier
+- Strict TypeScript + Biome
 - Unit tests + smoke test
 - GitHub Actions CI with individual step reporting
 - A minimal default extension in `src/index.ts`
 - Multiple architecture starters in `starters/`
 - Pi 0.63.x-compatible extension patterns
+
+Biome is configured to keep the previous template guardrails around explicit `any`, type-only imports, floating promises, unused variables, and namespace imports, while also adding unused-import, CommonJS, and `node:` builtin import checks.
 
 ## Quick start
 
@@ -159,6 +161,8 @@ pnpm run typecheck
 pnpm run test
 pnpm run smoke-test
 pnpm run lint
+pnpm run lint:fix
+pnpm run format
 pnpm run format:check
 pnpm run check
 ```

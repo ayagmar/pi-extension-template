@@ -1,10 +1,10 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import eventOnly from "../starters/event-only.js";
-import toolOnly from "../starters/tool-only.js";
+import test from "node:test";
+import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import commandOnly from "../starters/command-only.js";
+import eventOnly from "../starters/event-only.js";
 import hybrid from "../starters/hybrid.js";
+import toolOnly from "../starters/tool-only.js";
 import uiOnly from "../starters/ui-only.js";
 
 interface RegisteredCommand {

@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 export default function commandOnlyExtension(pi: ExtensionAPI) {
   let enabled = true;

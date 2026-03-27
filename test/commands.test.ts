@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { buildHelpText, parseSubcommand } from "../src/commands.js";
 import { EXTENSION_COMMAND } from "../src/constants.js";
 

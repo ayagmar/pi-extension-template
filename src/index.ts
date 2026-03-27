@@ -1,5 +1,6 @@
+import { type ExtensionAPI, type ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { buildHelpText, parseSubcommand } from "./commands.js";
 import {
   DEFAULT_LABEL,
   EXTENSION_COMMAND,
@@ -7,9 +8,8 @@ import {
   STATE_ENTRY_TYPE,
   TOOL_NAME,
 } from "./constants.js";
-import { buildHelpText, parseSubcommand } from "./commands.js";
 import { buildEchoText } from "./tool.js";
-import type { ExtensionState } from "./types.js";
+import { type ExtensionState } from "./types.js";
 
 export default function extensionTemplate(pi: ExtensionAPI) {
   let state: ExtensionState = { label: DEFAULT_LABEL };
