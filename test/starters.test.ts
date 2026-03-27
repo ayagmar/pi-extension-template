@@ -13,6 +13,7 @@ interface RegisteredCommand {
 
 interface RegisteredTool {
   name: string;
+  promptSnippet?: string;
   execute: (...args: unknown[]) => Promise<unknown>;
 }
 
@@ -71,6 +72,7 @@ void test("tool-only starter registers tool and truncates long tool result", asy
     content: { type: string; text: string }[];
   };
   assert.equal(result.content[0]?.text, "HELLO");
+  assert.match(tool?.promptSnippet ?? "", /echo text back/i);
 
   const longText = "x".repeat(300);
   const truncated = toolResult?.(
@@ -116,6 +118,7 @@ void test("hybrid starter registers command/tool/shortcut and command affects to
   assert.ok(command);
   assert.ok(tool);
   assert.ok(shortcut);
+  assert.match(tool?.promptSnippet ?? "", /echo text back/i);
 
   const ctx = createContext(true);
   await command?.handler("toggle", ctx);

@@ -40,6 +40,7 @@ export default function hybridExtension(pi: ExtensionAPI) {
     name: "myext_echo",
     label: "Echo",
     description: "Echo text back to the model.",
+    promptSnippet: "Echo text back, optionally formatted as JSON.",
     parameters: Type.Object({
       message: Type.String(),
       // Use StringEnum for string enums — required for Google compatibility.

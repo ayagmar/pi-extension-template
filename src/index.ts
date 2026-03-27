@@ -67,6 +67,7 @@ export default function extensionTemplate(pi: ExtensionAPI) {
     name: TOOL_NAME,
     label: "Echo",
     description: "Echo text back to the model. Safe default tool for template projects.",
+    promptSnippet: "Echo text back to the user, optionally uppercased.",
     parameters: Type.Object({
       message: Type.String({ description: "Text to echo back" }),
       uppercase: Type.Optional(Type.Boolean({ description: "Return the message in upper case" })),

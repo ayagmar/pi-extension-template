@@ -9,20 +9,19 @@ A practical starter for building Pi extensions that are easy to ship, test, and 
 - GitHub Actions CI with individual step reporting
 - A minimal default extension in `src/index.ts`
 - Multiple architecture starters in `starters/`
+- Pi 0.63.x-compatible extension patterns
 
 ## Quick start
 
-1. Click **Use this template** on GitHub
-2. Clone your new repo
-3. Install dependencies
+1. Click **Use this template** on GitHub.
+2. Clone your new repo.
+3. Install dependencies.
 
 ```bash
 pnpm install
 ```
 
-This template uses [pnpm](https://pnpm.io/) for faster installs and disk efficiency. npm works too—just replace `pnpm` with `npm` in all commands.
-
-4. Run the setup script to customize names
+4. Run the bootstrap script once.
 
 ```bash
 pnpm run setup-template
@@ -30,24 +29,65 @@ pnpm run setup-template
 
 This updates `src/constants.ts`, `package.json`, and starter files with your extension name.
 
-5. Run checks
+5. Finish the rename pass manually.
+
+## Post-clone rename and cleanup
+
+`setup-template` handles the common identifiers, but it does **not** finish the repo for you.
+Before your first real release, update or remove the template leftovers below.
+
+### Rename checklist
+
+- Rename the GitHub repo / local directory to your real project name.
+- Review `package.json`:
+  - `name`
+  - `description`
+  - `pi.image` / `pi.video`
+- Review `src/constants.ts`:
+  - `EXTENSION_NAME`
+  - `EXTENSION_COMMAND`
+  - `TOOL_NAME`
+  - `STATE_ENTRY_TYPE`
+- Update `README.md` title and usage examples if they still describe a template.
+- Update `LICENSE` with your actual name or organization.
+
+### Template-only files and scripts
+
+After you finish renaming, these are usually not meant to ship forever:
+
+- `scripts/setup.mjs`
+- `pnpm run setup-template`
+- `.agents/skills/` (the repo-local bootstrap skill folder, if you no longer need it)
+
+Remove them once the extension has been renamed and you no longer need template bootstrapping.
+Also delete unused starter files and starter-specific tests before publishing a real extension package.
+
+## Repo-local bootstrap skill
+
+This template includes a repo-local skill at `.agents/skills/create-extension-repo`.
+
+Use `/skill:create-extension-repo` from this template repo to create a fresh GitHub repo with `gh repo create --template`, clone it locally, and remove the bootstrap skill folder from the generated repo so the child repo does not keep this template-only helper.
+
+## Verify the template
+
+Run the full check suite:
 
 ```bash
 pnpm run check
 ```
 
-6. Load it in Pi
+## Load it in Pi
+
+For a quick smoke test:
 
 ```bash
 pi -e ./src/index.ts
 ```
 
-For reloadable dev, place it in:
+For normal development, prefer auto-discovery so `/reload` works:
 
 - `~/.pi/agent/extensions/` (global)
 - `.pi/extensions/` (project)
-
-Then use `/reload`.
 
 ## Choose your extension pattern
 
@@ -66,75 +106,50 @@ cp starters/event-only.ts src/index.ts
 pnpm run check
 ```
 
-**Note:** If you copy a starter into `src/index.ts` **before** running `setup-template`, `src/index.ts` keeps the old `myext` names. Either:
+If you copy a starter into `src/index.ts` **before** running `setup-template`, the copied file keeps the default `myext` names. Either:
 
 - Run `setup-template` first, then copy the starter
 - Or copy the starter first, then run setup and manually update names in `src/index.ts`
 
-## Install methods (direct + extmgr)
+## Install and manage with current Pi
 
-### Direct with Pi
-
-From local path:
+Pi has built-in package management now. Use these commands directly:
 
 ```bash
+pi install ./relative/path/to/your-extension-repo
 pi install /absolute/path/to/your-extension-repo
-```
-
-From GitHub (before publishing):
-
-```bash
 pi install git:github.com/yourusername/your-repo
-# or
-pi install https://github.com/yourusername/your-repo
-```
-
-From npm (after publishing):
-
-```bash
 pi install npm:your-package-name
+
+pi remove npm:your-package-name
+pi update
+pi config
 ```
 
-### With `pi-extmgr`
+If Pi is already running, use `/reload` after local changes.
 
-Install extmgr once:
-
-```bash
-pi install npm:pi-extmgr
-```
-
-Then inside Pi:
-
-```bash
-/extensions install /absolute/path/to/your-extension-repo
-/extensions install git:github.com/yourusername/your-repo
-/extensions install npm:your-package-name
-```
-
-You can also open the interactive manager with `/extensions` and install from there.
-
-If Pi is already running, run `/reload` after install.
+**Do not use `pi-extmgr` or `/extensions install`.** They are legacy workflow docs and are not needed on current Pi.
 
 ## Customize
 
-The `setup-template` script updates most files automatically. To customize manually:
+The bootstrap script updates most identifiers automatically. To customize manually, review:
 
-Update `src/constants.ts`:
+### `src/constants.ts`
 
 - `EXTENSION_NAME`
 - `EXTENSION_COMMAND`
 - `TOOL_NAME`
 - `STATE_ENTRY_TYPE`
 
-Update `package.json`:
+### `package.json`
 
 - `name`
 - `description`
-- `pi.image` (for package gallery)
+- `pi.image` / `pi.video`
 
-Update `LICENSE`:
+### Custom tools on modern Pi
 
-- Replace `Your Name` with your actual name or organization
+If you add a model-callable tool, give it a `promptSnippet`. Current Pi only includes custom tools in the default `Available tools` prompt section when they opt in with `promptSnippet`.
 
 ## Scripts
 
@@ -151,23 +166,24 @@ pnpm run check
 ## Testing notes
 
 - `test/commands.test.ts`, `test/tool.test.ts`, `test/extension.test.ts` cover core template logic
-- `test/starters.test.ts` validates starter behavior patterns (registration + key flow)
+- `test/starters.test.ts` validates starter behavior patterns
 
 ## Docs worth reading
 
 - [extensions.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
-- [development.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/development.md)
 - [packages.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md)
+- [tui.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/tui.md)
+- [keybindings.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/keybindings.md)
 - [examples/extensions](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/examples/extensions)
 
 ## Share your extension
 
-Add the `pi-package` keyword to `package.json` (already included) and publish to npm.
-Your extension will appear in the [Pi package gallery](https://pi.dev/packages)
-and on [npmjs.com](https://www.npmjs.com/search?q=keywords%3Api-package).
+Add the `pi-package` keyword to `package.json` and publish to npm.
 
-Add `pi.video` or `pi.image` in `package.json` for a gallery preview
-(see [packages.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md#gallery-metadata)).
+For gallery previews, set `pi.image` or `pi.video` in `package.json`.
+See [packages.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md#gallery-metadata).
+
+Package gallery: [shittycodingagent.ai/packages](https://shittycodingagent.ai/packages)
 
 ## License
 

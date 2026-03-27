@@ -8,6 +8,7 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
     name: "myext_echo",
     label: "Echo",
     description: "Echo text back to the model.",
+    promptSnippet: "Echo text back, optionally uppercased or formatted.",
     parameters: Type.Object({
       message: Type.String({ description: "Text to echo" }),
       uppercase: Type.Optional(Type.Boolean({ description: "Uppercase output" })),
