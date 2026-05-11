@@ -33,19 +33,19 @@
     "image": "https://placehold.co/1200x630/png?text=My+Pi+Extension"
   },
   "peerDependencies": {
-    "@mariozechner/pi-ai": "*",
-    "@mariozechner/pi-coding-agent": "*",
-    "@mariozechner/pi-tui": "*",
-    "@sinclair/typebox": "*"
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.9",
-    "@mariozechner/pi-ai": "^0.63.1",
-    "@mariozechner/pi-coding-agent": "^0.63.1",
-    "@mariozechner/pi-tui": "^0.63.1",
-    "@sinclair/typebox": "^0.34.48",
+    "@earendil-works/pi-ai": "^0.74.0",
+    "@earendil-works/pi-coding-agent": "^0.74.0",
+    "@earendil-works/pi-tui": "^0.74.0",
     "@types/node": "^22.19.10",
     "tsx": "^4.21.0",
+    "typebox": "^1.1.38",
     "typescript": "^5.9.3"
   },
   "license": "MIT",

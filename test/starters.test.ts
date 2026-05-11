@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import commandOnly from "../starters/command-only.js";
 import eventOnly from "../starters/event-only.js";
 import hybrid from "../starters/hybrid.js";
