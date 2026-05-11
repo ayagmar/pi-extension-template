@@ -1,5 +1,5 @@
-import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Key, matchesKey } from "@mariozechner/pi-tui";
+import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { Key, matchesKey } from "@earendil-works/pi-tui";
 
 const STATUS_KEY = "myext";
 

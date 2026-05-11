@@ -174,18 +174,18 @@ pnpm run check
 
 ## Docs worth reading
 
-- [extensions.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
-- [packages.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md)
-- [tui.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/tui.md)
-- [keybindings.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/keybindings.md)
-- [examples/extensions](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent/examples/extensions)
+- [extensions.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
+- [packages.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/packages.md)
+- [tui.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/tui.md)
+- [keybindings.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/keybindings.md)
+- [examples/extensions](https://github.com/earendil-works/pi-mono/tree/main/packages/coding-agent/examples/extensions)
 
 ## Share your extension
 
 Add the `pi-package` keyword to `package.json` and publish to npm.
 
 For gallery previews, set `pi.image` or `pi.video` in `package.json`.
-See [packages.md](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md#gallery-metadata).
+See [packages.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/packages.md#gallery-metadata).
 
 Package gallery: [shittycodingagent.ai/packages](https://shittycodingagent.ai/packages)
 

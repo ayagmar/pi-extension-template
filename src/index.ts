@@ -1,5 +1,5 @@
-import { type ExtensionAPI, type ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
+import { type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
 import { buildHelpText, parseSubcommand } from "./commands.js";
 import {
   DEFAULT_LABEL,
@@ -22,9 +22,7 @@ export default function extensionTemplate(pi: ExtensionAPI) {
   }
 
   pi.on("session_start", (_event, ctx) => syncState(ctx));
-  pi.on("session_switch", (_event, ctx) => syncState(ctx));
   pi.on("session_tree", (_event, ctx) => syncState(ctx));
-  pi.on("session_fork", (_event, ctx) => syncState(ctx));
 
   pi.registerCommand(EXTENSION_COMMAND, {
     description: "Starter command for your extension",
