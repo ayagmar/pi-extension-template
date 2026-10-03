@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -90,6 +90,9 @@ void test("setup-template turns the template into a publishable scoped package",
 
     const starter = await readFile(join(dir, "starters/tool-only.ts"), "utf8");
     assert.match(starter, /"foo_echo"/);
+
+    // This file only makes sense in the template itself.
+    await assert.rejects(access(join(dir, "test/setup.test.ts")));
   });
 });
 
@@ -120,6 +123,7 @@ void test("setup-template re-run keeps release history and normalizes repo URLs"
     assert.equal(pkg.private, undefined);
     assert.equal(pkg.repository.url, "git+https://github.com/me/pi-bar.git");
     assert.equal(await readFile(join(dir, "CHANGELOG.md"), "utf8"), changelog);
+    await access(join(dir, "test/setup.test.ts"));
   });
 });
 

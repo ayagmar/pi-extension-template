@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 
@@ -10,6 +10,7 @@ const TEMPLATE_PACKAGE_NAME = "my-pi-extension";
 const TEMPLATE_REPO = "ayagmar/pi-extension-template";
 const DEFAULT_OWNER = "ayagmar";
 const INITIAL_VERSION = "0.0.0";
+const TEMPLATE_ONLY_TEST = "test/setup.test.ts";
 const NPM_NAME_PATTERN = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 const GITHUB_REPO_PATTERN = /^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/;
 
@@ -52,6 +53,8 @@ try {
 
   if (current.isTemplate) {
     await writeFile("CHANGELOG.md", "# Changelog\n");
+    // Template-only tests (they assert the template's private/placeholder state).
+    await rm(TEMPLATE_ONLY_TEST, { force: true });
   }
 
   stdout.write("\nTemplate setup complete.\n");
