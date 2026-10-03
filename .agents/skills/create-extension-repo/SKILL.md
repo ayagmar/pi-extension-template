@@ -1,6 +1,6 @@
 ---
 name: create-extension-repo
-description: Create a new GitHub repository from this template with gh CLI, clone it locally, remove this template's bootstrap skill from the generated repo, and clean package.json to stop shipping the skill downstream. Use when asked to make a new extension repo from this template.
+description: Create a new GitHub repository from this template with gh CLI, clone it locally and remove this template's bootstrap skill from the generated repo, then guide setup-template, pi 1.0 extension conventions and the release flow. Use when asked to make a new extension repo from this template.
 compatibility: Requires gh CLI auth, git, and node. Run from the template repository root unless you pass --template explicitly.
 ---
 
@@ -40,9 +40,8 @@ bash ./.agents/skills/create-extension-repo/scripts/create-from-template.sh my-o
 1. Verifies `gh`, `git`, and `node` are available.
 2. Uses `gh repo create --template` with this repo's GitHub origin by default.
 3. Clones the new repository locally.
-4. Removes the generated repo's `.agents/skills/` directory.
-5. Removes leftover repo-local bootstrap skill file entries from the generated repo's `package.json` if present.
-6. Creates and pushes a cleanup commit so the generated repo does not keep this bootstrap skill.
+4. Removes the generated repo's `.agents/skills/` directory (and `.agents/` if it is then empty).
+5. Creates and pushes a cleanup commit so the generated repo does not keep this bootstrap skill.
 
 ## After creation
 
@@ -69,6 +68,41 @@ Then remind them to review identifiers in:
 - `src/constants.ts`
 - `README.md`
 - `LICENSE`
+
+## Building the extension on pi 1.0
+
+The template targets pi ≥ 1.0 (devDependencies `@earendil-works/pi-*` `^1.0.1`, `typebox`
+`^1.3.27`; peers `"*"`). When you write or review extension code in a generated repo, keep the
+conventions the template and its starters model (the README's "Writing extensions for pi 1.0"
+section has the full list):
+
+- Pick a starter from `starters/` (event-only, tool-only, command-only, hybrid, ui-only) and copy it
+  over `src/index.ts`, ideally after `setup-template` so names are already rewritten. Delete the
+  unused starters and their tests in `test/starters.test.ts` before the first release
+  (`test/starters-load.test.ts` follows whatever is left in `starters/`).
+- Import only from `@earendil-works/pi-coding-agent`, `@earendil-works/pi-tui`,
+  `@earendil-works/pi-ai` and `typebox`; each imported host package goes in `peerDependencies`
+  (`"*"`) and `devDependencies`, never in `dependencies`.
+- `ctx.hasUI` (TUI or RPC) gates dialogs and `notify`; `ctx.mode === "tui"` gates
+  `ctx.ui.custom()` and other terminal components. Without a UI, report on stderr — never
+  stdout.
+- Custom components: truncate every line to the render width, build themed strings at render
+  time, and use the injected keybindings (`keybindings.matches(data, "tui.select.cancel")`).
+- Rebuild session state from `ctx.sessionManager.getBranch()` in `session_start`/`session_tree`;
+  start resources there (not in the factory) and release them in `session_shutdown`.
+- Tools: always set `promptSnippet`, keep `details` plain JSON. `tool_result` handlers that
+  replace `content` must return `structuredContent` too; returned `details` replace the
+  original. Use `isToolCallEventType` / `isBashToolResult` and cover the `powershell` tool when
+  guarding shell commands.
+- Use pi's helpers instead of hand-rolled code: `ctx.modelRegistry.complete/streamSimple` for
+  LLM calls (never `@earendil-works/pi-ai/compat`), `StringEnum` for string enums,
+  `truncateHead`/`truncateTail` for large output, `truncateToWidth`/`visibleWidth` for terminal
+  width, `pi.exec` for one-shot commands, `getAgentDir()`/`ctx.cwd` instead of `~/.pi` or
+  `process.cwd()`.
+
+Verify with `pnpm run check`: typecheck, Biome, unit tests, every starter loaded by the real
+pi CLI, and the smoke test that loads the package through its `pi` manifest. For UI work, also
+try `pi -e ./src/index.ts` and `pi -e ./src/index.ts --tui-mode regular` at a narrow width.
 
 ## Releasing a generated extension
 
