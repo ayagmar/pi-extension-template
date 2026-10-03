@@ -77,7 +77,9 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
   });
 
   // Post-process results before the model sees them. Keep large outputs small: they cost context
-  // and can trigger compaction mid-run.
+  // and can trigger compaction mid-run. This echo is one short line, so it caps characters; for
+  // multi-line output (logs, files, command output) use pi's line/byte-based truncateHead or
+  // truncateTail from @earendil-works/pi-coding-agent and tell the model where the rest is.
   pi.on("tool_result", (event) => {
     if (event.toolName !== "myext_echo") {
       return;

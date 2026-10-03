@@ -91,15 +91,16 @@ section has the full list):
   time, and use the injected keybindings (`keybindings.matches(data, "tui.select.cancel")`).
 - Rebuild session state from `ctx.sessionManager.getBranch()` in `session_start`/`session_tree`;
   start resources there (not in the factory) and release them in `session_shutdown`.
-- Tools: always set `promptSnippet`, keep `details` plain JSON. `tool_result` handlers that
-  replace `content` must return `structuredContent` too; returned `details` replace the
-  original. Use `isToolCallEventType` / `isBashToolResult` and cover the `powershell` tool when
-  guarding shell commands.
+- Tools: always set `promptSnippet`, keep `details` plain JSON, and derive argument types from
+  the schema (`Static<typeof schema>`). `renderResult` also draws failed calls (empty `details`),
+  so branch on `context.isError`. `tool_result` handlers that replace `content` must return
+  `structuredContent` too; returned `details` replace the original. Use `isToolCallEventType` /
+  `isBashToolResult` and cover the `powershell` tool when guarding shell commands.
 - Use pi's helpers instead of hand-rolled code: `ctx.modelRegistry.complete/streamSimple` for
-  LLM calls (never `@earendil-works/pi-ai/compat`), `StringEnum` for string enums,
-  `truncateHead`/`truncateTail` for large output, `truncateToWidth`/`visibleWidth` for terminal
-  width, `pi.exec` for one-shot commands, `getAgentDir()`/`ctx.cwd` instead of `~/.pi` or
-  `process.cwd()`.
+  LLM calls (never `@earendil-works/pi-ai/compat`), `StringEnum` for string enums, `contentText`
+  for the text of a message or tool result, `truncateHead`/`truncateTail` for large output,
+  `truncateToWidth`/`visibleWidth` for terminal width, `pi.exec` for one-shot commands,
+  `getAgentDir()`/`ctx.cwd` instead of `~/.pi` or `process.cwd()`.
 
 Verify with `pnpm run check`: typecheck, Biome, unit tests, every starter loaded by the real
 pi CLI, and the smoke test that loads the package through its `pi` manifest. For UI work, also
