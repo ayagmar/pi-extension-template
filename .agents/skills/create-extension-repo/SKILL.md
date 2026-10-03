@@ -40,7 +40,8 @@ bash ./.agents/skills/create-extension-repo/scripts/create-from-template.sh my-o
 1. Verifies `gh`, `git`, and `node` are available.
 2. Uses `gh repo create --template` with this repo's GitHub origin by default.
 3. Clones the new repository locally.
-4. Removes the generated repo's `.agents/skills/` directory (and `.agents/` if it is then empty).
+4. Removes the generated repo's `.agents/skills/` directory (and `.agents/` if it is then empty)
+   and the skill's template-only test, `test/bootstrap-skill.test.ts`.
 5. Creates and pushes a cleanup commit so the generated repo does not keep this bootstrap skill.
 
 ## After creation
