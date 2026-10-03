@@ -2,11 +2,19 @@
 
 Use these as drop-in starting points for `src/index.ts`.
 
-- `event-only.ts` → listeners/interceptors/guards (`tool_call`, `tool_result`, shortcut)
-- `tool-only.ts` → model-callable tools, plus result post-processing via `tool_result`
+- `event-only.ts` → listeners/interceptors/guards: confirms dangerous `bash`/`powershell`
+  commands (`tool_call`) and redacts secrets from shell results, `structuredContent` included
+  (`tool_result`), plus a shortcut
+- `tool-only.ts` → model-callable tool with custom rendering, plus result post-processing via
+  `tool_result` that keeps the tool's `details`
 - `command-only.ts` → user slash UX, including a small interactive `select` flow and shortcut
 - `hybrid.ts` → event + command + tool + shortcut in one file
-- `ui-only.ts` → status line, widget, custom dashboard via `ctx.ui.custom()`, shortcut
+- `ui-only.ts` → status line, widget, custom dashboard via `ctx.ui.custom()` (TUI only, with a
+  `notify` fallback for RPC/print), shortcut
+
+All starters target pi 1.0: they gate dialogs on `ctx.hasUI`, terminal components on
+`ctx.mode === "tui"`, and never write to stdout. `test/starters.test.ts` covers their behavior and
+`test/starters-load.test.ts` loads each file with the real pi CLI.
 
 Quick copy examples:
 
