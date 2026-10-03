@@ -186,8 +186,8 @@ void test("tool-only starter echoes and truncates long results without losing de
   const expanded = tool.renderResult?.(
     truncated,
     { expanded: true, isPartial: false },
-    { ...plainTheme, fg: (_color: string, value: string) => value },
-    {}
+    plainTheme,
+    { isError: false }
   );
   const rendered = expanded?.render(200).join("\n") ?? "";
   assert.match(rendered, /length=600 style=quoted/);
@@ -207,6 +207,29 @@ void test("tool-only starter echoes and truncates long results without losing de
     ),
     undefined
   );
+});
+
+void test("tool-only starter renders failed calls as errors, not successes", () => {
+  const harness = createHarness();
+  toolOnly(harness.pi);
+  const tool = harness.tools.get("myext_echo");
+  assert.ok(tool);
+
+  // What pi hands the renderer when validation fails, a tool_call hook blocks the call or the
+  // run is aborted: the error text and empty details.
+  const failed = {
+    content: [{ type: "text", text: "Blocked by starter safety policy" }],
+    details: {},
+  };
+  for (const expanded of [false, true]) {
+    const rendered =
+      tool
+        .renderResult?.(failed, { expanded, isPartial: false }, plainTheme, { isError: true })
+        .render(200)
+        .join("\n") ?? "";
+    assert.match(rendered, /✗ Blocked by starter safety policy/);
+    assert.doesNotMatch(rendered, /✓|undefined/);
+  }
 });
 
 void test("command-only starter command updates status and supports UI mode picker", async () => {
