@@ -1,5 +1,13 @@
+import { type Static, Type } from "typebox";
 import { MAX_MESSAGE_LENGTH } from "./constants.js";
-import { type EchoInput } from "./types.js";
+
+export const echoParameters = Type.Object({
+  message: Type.String({ description: "Text to echo back" }),
+  uppercase: Type.Optional(Type.Boolean({ description: "Return the message in upper case" })),
+});
+
+/** The validated tool arguments, derived from the schema so the two never drift apart. */
+export type EchoInput = Static<typeof echoParameters>;
 
 /** Cap the echoed text, counting code points so an emoji is never split into a lone surrogate. */
 export function sanitizeMessage(message: string): string {

@@ -3,7 +3,6 @@ import {
   type ExtensionContext,
   type SessionEntry,
 } from "@earendil-works/pi-coding-agent";
-import { Type } from "typebox";
 import { buildHelpText, parseSubcommand } from "./commands.js";
 import {
   DEFAULT_LABEL,
@@ -12,7 +11,7 @@ import {
   STATE_ENTRY_TYPE,
   TOOL_NAME,
 } from "./constants.js";
-import { buildEchoText } from "./tool.js";
+import { buildEchoText, echoParameters } from "./tool.js";
 import { type ExtensionState } from "./types.js";
 
 export default function extensionTemplate(pi: ExtensionAPI) {
@@ -70,10 +69,7 @@ export default function extensionTemplate(pi: ExtensionAPI) {
     label: "Echo",
     description: "Echo text back to the model. Safe default tool for template projects.",
     promptSnippet: "Echo text back to the user, optionally uppercased.",
-    parameters: Type.Object({
-      message: Type.String({ description: "Text to echo back" }),
-      uppercase: Type.Optional(Type.Boolean({ description: "Return the message in upper case" })),
-    }),
+    parameters: echoParameters,
     execute(_toolCallId, params) {
       const text = buildEchoText(params);
       return Promise.resolve({
