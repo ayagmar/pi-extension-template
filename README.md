@@ -93,7 +93,14 @@ pi -e ./src/index.ts
 For normal development, prefer auto-discovery so `/reload` works:
 
 - `~/.pi/agent/extensions/` (global)
-- `.pi/extensions/` (project)
+- `.pi/extensions/` (project; loaded only after you trust the project folder)
+
+Pi 1.0 starts in fullscreen mode. Check UI changes in both layouts:
+
+```bash
+pi -e ./src/index.ts                      # fullscreen (default)
+pi -e ./src/index.ts --tui-mode regular   # main-screen scrollback
+```
 
 ## Choose your extension pattern
 
@@ -117,26 +124,29 @@ If you copy a starter into `src/index.ts` **before** running `setup-template`, t
 - Run `setup-template` first, then copy the starter
 - Or copy the starter first, then run setup and manually update names in `src/index.ts`
 
-## Install and manage with current Pi
+## Install and manage with Pi
 
-Pi has built-in package management now. Use these commands directly:
+Pi has built-in package management:
 
 ```bash
-pi install ./relative/path/to/your-extension-repo
-pi install /absolute/path/to/your-extension-repo
+pi -e npm:my-pi-extension                 # try it for one run without installing
+pi install npm:my-pi-extension            # or npm:my-pi-extension@1.2.3 to pin
 pi install git:github.com/ayagmar/pi-extension-template
-pi install npm:my-pi-extension
+pi install ./relative/path/to/your-extension-repo
 
+pi list
+pi update npm:my-pi-extension             # one package
+pi update --extensions                    # all packages (bare `pi update` updates pi itself)
 pi remove npm:my-pi-extension
-pi update
 pi config
 ```
+
+Add `-l` to `pi install` to declare the package in the project's `.pi/settings.json` instead;
+project packages load only after the project folder is trusted.
 
 `setup-template` rewrites the `npm:` and `git:` sources above to your package name and repository.
 
 If Pi is already running, use `/reload` after local changes.
-
-**Do not use `pi-extmgr` or `/extensions install`.** They are legacy workflow docs and are not needed on current Pi.
 
 ## Customize
 
@@ -156,9 +166,37 @@ The bootstrap script updates most identifiers automatically. To customize manual
 - `repository` / `homepage` / `bugs`
 - `pi.image` / `pi.video`
 
-### Custom tools on modern Pi
+## Writing extensions for pi 1.0
 
-If you add a model-callable tool, give it a `promptSnippet`. Current Pi only includes custom tools in the default `Available tools` prompt section when they opt in with `promptSnippet`.
+The default extension and every starter follow these rules; keep them when you build on top:
+
+- **Imports.** Use `@earendil-works/pi-coding-agent`, `@earendil-works/pi-tui`,
+  `@earendil-works/pi-ai` and `typebox` (not `@mariozechner/*` or `@sinclair/typebox`). List
+  each one you import in `peerDependencies` as `"*"` (pi provides them at runtime) and in
+  `devDependencies` for typechecking; never in `dependencies`.
+- **Modes.** Extensions load in the TUI, RPC, JSON and print modes. Use `ctx.hasUI` for dialogs
+  and notifications (`select`, `confirm`, `input`, `notify`), which also work over RPC. Guard
+  terminal-only UI (`ctx.ui.custom()`, component widgets, footer, header, editor) with
+  `ctx.mode === "tui"`: `hasUI` is true over RPC too, where `custom()` shows nothing.
+- **Output.** Never write to stdout. Pi 1.0 runs fullscreen by default and uses stdout for the
+  RPC/JSON protocols; use `ctx.ui.notify`/`setStatus`/`setWidget`, or stderr without a UI.
+- **Components.** Every rendered line must fit the given width (`truncateToWidth`,
+  `visibleWidth`); pi throws on wider lines. Build themed strings at render time, and use the
+  injected `KeybindingsManager` (`keybindings.matches(data, "tui.select.cancel")`) instead of
+  hard-coded keys.
+- **Session state.** Rebuild it from `ctx.sessionManager.getBranch()` on `session_start` (and
+  `session_tree`); branches also contain system messages and `usage`/`context_edit` entries.
+  Start timers, processes or sockets from `session_start` or a command, never in the factory,
+  and release them in an idempotent `session_shutdown` handler.
+- **Tools.** Give every model-callable tool a `promptSnippet` (otherwise it is left out of the
+  "Available tools" prompt section), keep `details` plain JSON, and keep large results small
+  (`truncateHead`/`truncateTail`).
+- **Events.** A `tool_result` handler that replaces `content` must also return
+  `structuredContent` (or it is dropped), and a returned `details` replaces the original.
+  Narrow built-in tool events with `isToolCallEventType("bash", event)` / `isBashToolResult`,
+  and remember the `powershell` tool when you guard shell commands.
+- **Shortcuts.** Pick keys pi does not bind (`ctrl+shift+m` here); pi skips extension shortcuts
+  that collide with its reserved keybindings.
 
 ## Scripts
 
@@ -178,24 +216,28 @@ pnpm run release:dry
 ## Testing notes
 
 - `test/commands.test.ts`, `test/tool.test.ts`, `test/extension.test.ts` cover core template logic
-- `test/starters.test.ts` validates starter behavior patterns
+- `test/starters.test.ts` validates starter behavior patterns, with contexts for each `ctx.mode`
+- `test/starters-load.test.ts` loads every file in `starters/` with the real pi CLI (RPC mode)
+- `test/setup.test.ts` covers `setup-template` (template-only; setup deletes it)
+- `pnpm run smoke-test` loads the package itself (the `pi` manifest) with the real pi CLI
 
 ## Docs worth reading
 
-- [extensions.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)
-- [packages.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/packages.md)
-- [tui.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/tui.md)
-- [keybindings.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/keybindings.md)
-- [examples/extensions](https://github.com/earendil-works/pi-mono/tree/main/packages/coding-agent/examples/extensions)
+- [extensions.md](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md)
+- [packages.md](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)
+- [tui.md](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/tui.md)
+- [rpc-extension-ui.md](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/rpc-extension-ui.md)
+- [keybindings.md](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/keybindings.md)
+- [extensions/types.ts](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/core/extensions/types.ts) (exact event, context and tool types)
+- [examples/extensions](https://github.com/earendil-works/pi/tree/main/packages/coding-agent/examples/extensions)
 
 ## Share your extension
 
-Add the `pi-package` keyword to `package.json` and publish to npm.
+The `pi-package` keyword (already in `package.json`) makes the published npm package eligible
+for the [Pi package gallery](https://pi.dev/packages).
 
 For gallery previews, set `pi.image` or `pi.video` in `package.json`.
-See [packages.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/packages.md#gallery-metadata).
-
-Package gallery: [shittycodingagent.ai/packages](https://shittycodingagent.ai/packages)
+See [packages.md](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md#create-a-package).
 
 ## Releasing
 
