@@ -10,7 +10,7 @@ A practical starter for building Pi extensions that are easy to ship, test, and 
 - A Release workflow: release-it + Conventional Commits changelog + npm trusted publishing
 - A minimal default extension in `src/index.ts`
 - Multiple architecture starters in `starters/`
-- Pi 0.63.x-compatible extension patterns
+- Extension patterns for pi 1.0 (`@earendil-works/*` packages, `typebox` schemas; requires pi ≥ 1.0)
 
 Biome is configured to keep the previous template guardrails around explicit `any`, type-only imports, floating promises, unused variables, and namespace imports, while also adding unused-import, CommonJS, and `node:` builtin import checks.
 
