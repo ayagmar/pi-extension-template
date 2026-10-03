@@ -1,4 +1,8 @@
-import { type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import {
+  type ExtensionAPI,
+  type ExtensionContext,
+  type SessionEntry,
+} from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { buildHelpText, parseSubcommand } from "./commands.js";
 import {
@@ -80,15 +84,15 @@ export default function extensionTemplate(pi: ExtensionAPI) {
   });
 }
 
-/** Notify via TUI when available, otherwise console. */
-function notify(
-  ctx: { hasUI: boolean; ui: { notify: (message: string, level: "info") => void } },
-  message: string
-): void {
+/**
+ * Notify through the UI when there is one (interactive TUI or an RPC client). JSON and print
+ * modes have no UI and pi reserves stdout for their protocol output, so fall back to stderr.
+ */
+function notify(ctx: Pick<ExtensionContext, "hasUI" | "ui">, message: string): void {
   if (ctx.hasUI) {
     ctx.ui.notify(message, "info");
   } else {
-    console.log(message);
+    console.error(message);
   }
 }
 
@@ -96,9 +100,8 @@ function restoreFromContext(ctx: Pick<ExtensionContext, "sessionManager">): Exte
   return restoreState(ctx.sessionManager.getBranch()) ?? { label: DEFAULT_LABEL };
 }
 
-function restoreState(
-  entries: { type?: string; customType?: string; data?: unknown }[]
-): ExtensionState | undefined {
+/** Latest state entry on the current branch; other entry types (messages, usage, …) are skipped. */
+function restoreState(entries: readonly SessionEntry[]): ExtensionState | undefined {
   for (let i = entries.length - 1; i >= 0; i -= 1) {
     const entry = entries[i];
     if (entry?.type !== "custom" || entry.customType !== STATE_ENTRY_TYPE) continue;
