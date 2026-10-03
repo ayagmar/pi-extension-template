@@ -55,12 +55,40 @@ pnpm run setup-template
 pnpm run check
 ```
 
-Then remind them to update identifiers in:
+`setup-template` prompts for the extension name, npm package name (scoped names such as
+`@ayagmar/pi-foo` are fine), description, command, tool name, state entry type and GitHub
+repository (defaults to the clone's `origin`). It rewrites `src/constants.ts`, the starters,
+`package.json` (`name`, `description`, `repository`, `homepage`, `bugs`), the README install
+sources, resets `version` to `0.0.0` and `CHANGELOG.md`, and removes the template-only
+`"private": true` flag. When driving it non-interactively, pipe one answer per line (blank line =
+default), e.g. `printf 'pi-foo\n@ayagmar/pi-foo\n' | pnpm run setup-template`.
+
+Then remind them to review identifiers in:
 
 - `package.json`
 - `src/constants.ts`
 - `README.md`
 - `LICENSE`
+
+## Releasing a generated extension
+
+Generated repos inherit the template's CI (`.github/workflows/ci.yml`), Dependabot config and
+Release workflow (`.github/workflows/release.yml` + `.release-it.json`). Releases are cut only from
+GitHub Actions:
+
+- Commit with Conventional Commits (`feat:`, `fix:`, `feat!:` …) — the changelog is generated
+  from them.
+- Run **Actions → Release → Run workflow** (`gh workflow run release.yml -f increment=auto`).
+  It runs `pnpm run check`, then release-it bumps the version, updates `CHANGELOG.md`, tags
+  `vX.Y.Z`, pushes and creates the GitHub release, and `npm publish` publishes with provenance via
+  npm trusted publishing (OIDC). Preview locally with `pnpm release:dry`.
+- The workflow refuses to run while `package.json` is still `"private": true` (i.e. before
+  `setup-template`).
+- First publish only: the package does not exist on npm yet, so trusted publishing cannot be
+  configured. Run the workflow once with `bootstrap: true` and a short-lived, publish-only
+  `NPM_TOKEN` repository secret, then configure trusted publishing on npmjs.com (GitHub Actions ·
+  owner/repo · workflow `release.yml`) and delete the secret.
+- Never run `npm publish` or release-it from a laptop.
 
 ## Notes
 
