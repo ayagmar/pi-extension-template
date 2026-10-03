@@ -127,6 +127,21 @@ void test("setup-template re-run keeps release history and normalizes repo URLs"
   });
 });
 
+void test("setup-template rewrites the starters that are left after unused ones are deleted", async () => {
+  await withTemplateCopy(async (dir) => {
+    for (const unused of ["event-only.ts", "hybrid.ts", "ui-only.ts", "command-only.ts"]) {
+      await rm(join(dir, "starters", unused));
+    }
+    await rm(join(dir, "test/starters.test.ts"));
+
+    const result = runSetup(dir, ["pi-baz", "pi-baz", "", "baz", "", "", ""]);
+    assert.equal(result.status, 0, result.stderr);
+
+    assert.match(await readFile(join(dir, "starters/tool-only.ts"), "utf8"), /"baz_echo"/);
+    assert.match(await readFile(join(dir, "src/constants.ts"), "utf8"), /TOOL_NAME = "baz_echo"/);
+  });
+});
+
 void test("setup-template rejects invalid package names without touching files", async () => {
   await withTemplateCopy(async (dir) => {
     const before = await readFile(join(dir, "package.json"), "utf8");
