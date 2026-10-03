@@ -24,7 +24,7 @@ cp starters/event-only.ts src/index.ts
 cp starters/tool-only.ts src/index.ts
 ```
 
-Then run:
+Then delete `test/extension.test.ts` (it tests the default extension you replaced) and run:
 
 ```bash
 pnpm run check

@@ -78,7 +78,9 @@ conventions the template and its starters model (the README's "Writing extension
 section has the full list):
 
 - Pick a starter from `starters/` (event-only, tool-only, command-only, hybrid, ui-only) and copy it
-  over `src/index.ts`, ideally after `setup-template` so names are already rewritten. Delete the
+  over `src/index.ts`, ideally after `setup-template` so names are already rewritten. Delete
+  `test/extension.test.ts` with it (it tests the default extension, so `pnpm run check` fails
+  otherwise), plus the default's now-unused `src/*.ts` helpers and their tests. Delete the
   unused starters and their tests in `test/starters.test.ts` before the first release
   (`test/starters-load.test.ts` follows whatever is left in `starters/`).
 - Import only from `@earendil-works/pi-coding-agent`, `@earendil-works/pi-tui`,
