@@ -63,7 +63,8 @@ After you finish renaming, these are usually not meant to ship forever:
 
 - `scripts/setup.mjs`
 - `pnpm run setup-template`
-- `.agents/skills/` (the repo-local bootstrap skill folder, if you no longer need it)
+- `.agents/skills/` (the repo-local bootstrap skill folder, if you no longer need it) and its
+  test, `test/bootstrap-skill.test.ts`
 
 Remove them once the extension has been renamed and you no longer need template bootstrapping.
 Also delete unused starter files and starter-specific tests before publishing a real extension package.
@@ -219,6 +220,8 @@ pnpm run release:dry
 - `test/starters.test.ts` validates starter behavior patterns, with contexts for each `ctx.mode`
 - `test/starters-load.test.ts` loads every file in `starters/` with the real pi CLI (RPC mode)
 - `test/setup.test.ts` covers `setup-template` (template-only; setup deletes it)
+- `test/bootstrap-skill.test.ts` covers the bootstrap skill's helper with a fake `gh`
+  (template-only; removed together with the skill)
 - `pnpm run smoke-test` loads the package itself (the `pi` manifest) with the real pi CLI
 
 ## Docs worth reading

@@ -29,18 +29,9 @@ detect_template_repo() {
     return 1
   fi
 
-  if [[ "$origin" =~ ^git@github\.com:([^/]+/[^/]+?)(\.git)?$ ]]; then
-    echo "${BASH_REMATCH[1]}"
-    return 0
-  fi
-
-  if [[ "$origin" =~ ^https://github\.com/([^/]+/[^/]+?)(\.git)?$ ]]; then
-    echo "${BASH_REMATCH[1]}"
-    return 0
-  fi
-
-  if [[ "$origin" =~ ^ssh://git@github\.com/([^/]+/[^/]+?)(\.git)?$ ]]; then
-    echo "${BASH_REMATCH[1]}"
+  # Bash regexes have no lazy quantifiers, so strip a trailing ".git" after matching.
+  if [[ "$origin" =~ ^(git@github\.com:|https://github\.com/|ssh://git@github\.com/)([^/]+/[^/]+)$ ]]; then
+    echo "${BASH_REMATCH[2]%.git}"
     return 0
   fi
 
