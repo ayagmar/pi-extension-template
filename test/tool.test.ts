@@ -17,3 +17,17 @@ void test("sanitizeMessage truncates long input", () => {
   assert.equal(sanitized.length, MAX_MESSAGE_LENGTH);
   assert.match(sanitized, /…$/);
 });
+
+void test("sanitizeMessage never splits a surrogate pair", () => {
+  const emoji = "😀";
+  const sanitized = sanitizeMessage(emoji.repeat(MAX_MESSAGE_LENGTH + 1));
+
+  assert.equal(Array.from(sanitized).length, MAX_MESSAGE_LENGTH);
+  assert.equal(sanitized, `${emoji.repeat(MAX_MESSAGE_LENGTH - 1)}…`);
+  assert.doesNotMatch(sanitized, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+});
+
+void test("sanitizeMessage keeps messages at the limit unchanged", () => {
+  const message = "😀".repeat(MAX_MESSAGE_LENGTH);
+  assert.equal(sanitizeMessage(message), message);
+});
