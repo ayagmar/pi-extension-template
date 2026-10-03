@@ -226,6 +226,8 @@ pnpm run release:dry
 - `test/commands.test.ts`, `test/tool.test.ts`, `test/extension.test.ts` cover core template logic
 - `test/starters.test.ts` validates starter behavior patterns, with contexts for each `ctx.mode`
 - `test/starters-load.test.ts` loads every file in `starters/` with the real pi CLI (RPC mode)
+- `test/smoke-test.test.ts` proves the smoke test fails when an event handler throws at startup
+  (pi reports those as `extension_error` lines on stdout, not as a non-zero exit)
 - `test/setup.test.ts` covers `setup-template` (template-only; setup deletes it)
 - `test/bootstrap-skill.test.ts` covers the bootstrap skill's helper with a fake `gh`
   (template-only; removed together with the skill)

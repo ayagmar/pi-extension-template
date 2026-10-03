@@ -105,8 +105,9 @@ section has the full list):
   `getAgentDir()`/`ctx.cwd` instead of `~/.pi` or `process.cwd()`.
 
 Verify with `pnpm run check`: typecheck, Biome, unit tests, every starter loaded by the real
-pi CLI, and the smoke test that loads the package through its `pi` manifest. For UI work, also
-try `pi -e ./src/index.ts` and `pi -e ./src/index.ts --tui-mode regular` at a narrow width.
+pi CLI, and the smoke test that loads the package through its `pi` manifest. Both fail on a
+startup event handler that throws: pi does not exit non-zero for those, it reports them as
+`extension_error` lines on stdout. For UI work, also try `pi -e ./src/index.ts` and `pi -e ./src/index.ts --tui-mode regular` at a narrow width.
 
 ## Releasing a generated extension
 
