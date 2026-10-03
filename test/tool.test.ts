@@ -11,6 +11,13 @@ void test("buildEchoText can uppercase", () => {
   assert.equal(buildEchoText({ message: "hello", uppercase: true }), "HELLO");
 });
 
+void test("buildEchoText keeps upper-cased output within the length cap", () => {
+  // "ß".toUpperCase() is "SS", so upper-casing after the cap would double the length.
+  const text = buildEchoText({ message: "ß".repeat(MAX_MESSAGE_LENGTH), uppercase: true });
+  assert.equal(Array.from(text).length, MAX_MESSAGE_LENGTH);
+  assert.equal(text, `${"S".repeat(MAX_MESSAGE_LENGTH - 1)}…`);
+});
+
 void test("sanitizeMessage truncates long input", () => {
   const longMessage = "x".repeat(MAX_MESSAGE_LENGTH + 10);
   const sanitized = sanitizeMessage(longMessage);

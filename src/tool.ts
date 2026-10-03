@@ -12,6 +12,7 @@ export function sanitizeMessage(message: string): string {
 }
 
 export function buildEchoText(input: EchoInput): string {
-  const sanitized = sanitizeMessage(input.message.trim());
-  return input.uppercase ? sanitized.toUpperCase() : sanitized;
+  const message = input.message.trim();
+  // Upper-case before capping: toUpperCase can grow the text ("ß" becomes "SS").
+  return sanitizeMessage(input.uppercase ? message.toUpperCase() : message);
 }
