@@ -191,7 +191,9 @@ The default extension and every starter follow these rules; keep them when you b
   and release them in an idempotent `session_shutdown` handler.
 - **Tools.** Give every model-callable tool a `promptSnippet` (otherwise it is left out of the
   "Available tools" prompt section), keep `details` plain JSON, and keep large results small
-  (`truncateHead`/`truncateTail`).
+  (`truncateHead`/`truncateTail`). `renderResult` also draws failed calls, with empty `details`:
+  check `context.isError`. Read result text with `contentText(result.content)` from
+  `@earendil-works/pi-ai`, and derive parameter types with `Static<typeof schema>`.
 - **Events.** A `tool_result` handler that replaces `content` must also return
   `structuredContent` (or it is dropped), and a returned `details` replaces the original.
   Narrow built-in tool events with `isToolCallEventType("bash", event)` / `isBashToolResult`,
