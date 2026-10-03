@@ -117,8 +117,13 @@ Replace the default `src/index.ts` with your chosen starter:
 
 ```bash
 cp starters/event-only.ts src/index.ts
+rm test/extension.test.ts   # it tests the default extension you just replaced
 pnpm run check
 ```
+
+`test/starters.test.ts` already covers the starter you copied. The default extension's helpers
+(`src/commands.ts`, `src/tool.ts`, `src/types.ts`) and their tests can go too once nothing imports
+them; keep `src/constants.ts` if you switch the starter's names to its constants.
 
 If you copy a starter into `src/index.ts` **before** running `setup-template`, the copied file keeps the default `myext` names. Either:
 
