@@ -29,7 +29,9 @@ pnpm install
 pnpm run setup-template
 ```
 
-This updates `src/constants.ts`, `package.json`, and starter files with your extension name.
+This updates `src/constants.ts`, starter files and `package.json` (name, description,
+repository/homepage/bugs URLs), resets `version` and `CHANGELOG.md`, and removes the
+template-only `"private": true` flag so the package can be published.
 
 5. Finish the rename pass manually.
 
@@ -44,6 +46,7 @@ Before your first real release, update or remove the template leftovers below.
 - Review `package.json`:
   - `name`
   - `description`
+  - `repository` / `homepage` / `bugs`
   - `pi.image` / `pi.video`
 - Review `src/constants.ts`:
   - `EXTENSION_NAME`
@@ -120,13 +123,15 @@ Pi has built-in package management now. Use these commands directly:
 ```bash
 pi install ./relative/path/to/your-extension-repo
 pi install /absolute/path/to/your-extension-repo
-pi install git:github.com/yourusername/your-repo
-pi install npm:your-package-name
+pi install git:github.com/ayagmar/pi-extension-template
+pi install npm:my-pi-extension
 
-pi remove npm:your-package-name
+pi remove npm:my-pi-extension
 pi update
 pi config
 ```
+
+`setup-template` rewrites the `npm:` and `git:` sources above to your package name and repository.
 
 If Pi is already running, use `/reload` after local changes.
 
@@ -147,6 +152,7 @@ The bootstrap script updates most identifiers automatically. To customize manual
 
 - `name`
 - `description`
+- `repository` / `homepage` / `bugs`
 - `pi.image` / `pi.video`
 
 ### Custom tools on modern Pi
