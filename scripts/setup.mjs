@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 
@@ -242,19 +242,23 @@ async function updateReadme(previous, next) {
 }
 
 async function updateStarterNames(previous, next) {
-  const files = [
-    "starters/event-only.ts",
-    "starters/tool-only.ts",
-    "starters/command-only.ts",
-    "starters/hybrid.ts",
-    "starters/ui-only.ts",
-  ];
+  // Users delete the starters they do not need, so rewrite whichever ones are left.
+  const files = await readdir("starters").catch(() => []);
 
-  for (const path of files) {
-    let content = await readFile(path, "utf8");
-    content = replaceTemplateNames(content, previous, next);
-    await writeFile(path, content);
+  for (const file of files.filter((name) => name.endsWith(".ts"))) {
+    await rewriteTemplateNames(`starters/${file}`, previous, next);
   }
+}
+
+async function rewriteTemplateNames(path, previous, next) {
+  let content;
+  try {
+    content = await readFile(path, "utf8");
+  } catch (error) {
+    if (error?.code === "ENOENT") return;
+    throw error;
+  }
+  await writeFile(path, replaceTemplateNames(content, previous, next));
 }
 
 function replaceTemplateNames(content, previous, next) {
@@ -284,11 +288,5 @@ function replaceConst(content, constName, value) {
 }
 
 async function updateTestNames(previous, next) {
-  const files = ["test/starters.test.ts"];
-
-  for (const path of files) {
-    let content = await readFile(path, "utf8");
-    content = replaceTemplateNames(content, previous, next);
-    await writeFile(path, content);
-  }
+  await rewriteTemplateNames("test/starters.test.ts", previous, next);
 }
