@@ -57,7 +57,13 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
       return new Text(line, 0, 0);
     },
 
-    renderResult(result, { expanded }, theme) {
+    renderResult(result, { expanded }, theme, context) {
+      // Failed calls (invalid arguments, a tool_call hook that blocked it, an abort) are rendered
+      // here too, with pi's error text and empty details.
+      if (context.isError) {
+        return new Text(theme.fg("error", `✗ ${contentText(result.content)}`), 0, 0);
+      }
+
       let line = theme.fg("success", "✓ ") + contentText(result.content);
 
       if (expanded && result.details) {
