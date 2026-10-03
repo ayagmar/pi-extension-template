@@ -1,4 +1,4 @@
-import { StringEnum } from "@earendil-works/pi-ai";
+import { contentText, StringEnum } from "@earendil-works/pi-ai";
 import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
@@ -58,8 +58,7 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
     },
 
     renderResult(result, { expanded }, theme) {
-      const text = result.content?.[0]?.type === "text" ? result.content[0].text : "";
-      let line = theme.fg("success", "✓ ") + text;
+      let line = theme.fg("success", "✓ ") + contentText(result.content);
 
       if (expanded && result.details) {
         const { length, style, truncated } = result.details;
@@ -78,7 +77,7 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
       return;
     }
 
-    const joined = event.content.map((part) => (part.type === "text" ? part.text : "")).join("\n");
+    const joined = contentText(event.content);
     // Count code points, not UTF-16 units, so an emoji is never split in half.
     const codePoints = Array.from(joined);
     if (codePoints.length <= MAX_RESULT_CHARS) {
