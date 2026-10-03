@@ -1,5 +1,5 @@
 import { StringEnum } from "@earendil-works/pi-ai";
-import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 export default function hybridExtension(pi: ExtensionAPI) {
@@ -69,13 +69,11 @@ export default function hybridExtension(pi: ExtensionAPI) {
   });
 }
 
-function notify(
-  ctx: { hasUI: boolean; ui: { notify: (message: string, level: "info") => void } },
-  message: string
-): void {
+/** Notify through the UI when there is one; JSON/print modes reserve stdout, so use stderr. */
+function notify(ctx: Pick<ExtensionContext, "hasUI" | "ui">, message: string): void {
   if (ctx.hasUI) {
     ctx.ui.notify(message, "info");
   } else {
-    console.log(message);
+    console.error(message);
   }
 }

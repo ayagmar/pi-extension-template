@@ -3,6 +3,15 @@ import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
+const MAX_RESULT_CHARS = 200;
+
+/** Tool result details must stay plain JSON (pi 1.0 types them as JsonValue). */
+interface EchoDetails {
+  length: number;
+  style: string;
+  truncated?: boolean;
+}
+
 export default function toolOnlyExtension(pi: ExtensionAPI) {
   pi.registerTool({
     name: "myext_echo",
@@ -30,10 +39,8 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
         text = `[${text}]`;
       }
 
-      return Promise.resolve({
-        content: [{ type: "text", text }],
-        details: { length: text.length, style: params.style ?? "plain" },
-      });
+      const details: EchoDetails = { length: text.length, style: params.style ?? "plain" };
+      return Promise.resolve({ content: [{ type: "text", text }], details });
     },
 
     // Custom rendering — controls how the tool appears in the TUI.
@@ -55,30 +62,34 @@ export default function toolOnlyExtension(pi: ExtensionAPI) {
       let line = theme.fg("success", "✓ ") + text;
 
       if (expanded && result.details) {
-        line += `\n${theme.fg("dim", `  length=${result.details.length}`)}`;
-        line += theme.fg("dim", ` style=${result.details.style}`);
+        const { length, style, truncated } = result.details;
+        line += `\n${theme.fg("dim", `  length=${length} style=${style}`)}`;
+        if (truncated) line += theme.fg("warning", " (truncated)");
       }
 
       return new Text(line, 0, 0);
     },
   });
 
+  // Post-process results before the model sees them. Keep large outputs small: they cost context
+  // and can trigger compaction mid-run.
   pi.on("tool_result", (event) => {
     if (event.toolName !== "myext_echo") {
       return;
     }
 
     const joined = event.content.map((part) => (part.type === "text" ? part.text : "")).join("\n");
-
-    if (joined.length <= 200) {
+    // Count code points, not UTF-16 units, so an emoji is never split in half.
+    const codePoints = Array.from(joined);
+    if (codePoints.length <= MAX_RESULT_CHARS) {
       return;
     }
 
+    // A returned `details` replaces the original, so spread it to keep what renderResult reads.
+    const details: EchoDetails = { ...(event.details as EchoDetails), truncated: true };
     return {
-      content: [{ type: "text", text: `${joined.slice(0, 199)}…` }],
-      details: {
-        truncated: true,
-      },
+      content: [{ type: "text", text: `${codePoints.slice(0, MAX_RESULT_CHARS - 1).join("")}…` }],
+      details,
     };
   });
 }

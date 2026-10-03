@@ -1,4 +1,4 @@
-import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 export default function commandOnlyExtension(pi: ExtensionAPI) {
   let enabled = true;
@@ -28,8 +28,9 @@ export default function commandOnlyExtension(pi: ExtensionAPI) {
           return;
 
         case "mode": {
+          // Dialogs work in the TUI and over RPC; JSON/print modes have no UI.
           if (!ctx.hasUI) {
-            notify(ctx, "Mode picker is only available in interactive mode");
+            notify(ctx, "Mode picker needs a UI (interactive or RPC mode)");
             return;
           }
           const nextMode = await ctx.ui.select("Choose mode", ["enabled", "disabled"]);
@@ -54,13 +55,11 @@ export default function commandOnlyExtension(pi: ExtensionAPI) {
   });
 }
 
-function notify(
-  ctx: { hasUI: boolean; ui: { notify: (message: string, level: "info") => void } },
-  message: string
-): void {
+/** Notify through the UI when there is one; JSON/print modes reserve stdout, so use stderr. */
+function notify(ctx: Pick<ExtensionContext, "hasUI" | "ui">, message: string): void {
   if (ctx.hasUI) {
     ctx.ui.notify(message, "info");
   } else {
-    console.log(message);
+    console.error(message);
   }
 }
