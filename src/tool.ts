@@ -1,12 +1,14 @@
 import { MAX_MESSAGE_LENGTH } from "./constants.js";
 import { type EchoInput } from "./types.js";
 
+/** Cap the echoed text, counting code points so an emoji is never split into a lone surrogate. */
 export function sanitizeMessage(message: string): string {
-  if (message.length <= MAX_MESSAGE_LENGTH) {
+  const codePoints = Array.from(message);
+  if (codePoints.length <= MAX_MESSAGE_LENGTH) {
     return message;
   }
 
-  return `${message.slice(0, MAX_MESSAGE_LENGTH - 1)}…`;
+  return `${codePoints.slice(0, MAX_MESSAGE_LENGTH - 1).join("")}…`;
 }
 
 export function buildEchoText(input: EchoInput): string {
