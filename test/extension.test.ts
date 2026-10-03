@@ -83,7 +83,7 @@ void test("set-label persists state and session_tree resyncs from the branch", a
   const command = harness.commands.get(EXTENSION_COMMAND);
 
   const ctx = createContext({ branch: [] });
-  await command?.handler("set-label shipping  ready", ctx);
+  await command?.handler("set-label\tshipping  ready", ctx);
 
   assert.deepEqual(harness.appended, [
     { customType: STATE_ENTRY_TYPE, data: { label: "shipping  ready" } },

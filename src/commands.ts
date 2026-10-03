@@ -8,12 +8,12 @@ export function buildHelpText(): string {
   ].join("\n");
 }
 
+/** Split `<name> <rest>` on the first run of any whitespace (tabs and pasted newlines too). */
 export function parseSubcommand(raw: string): { name: string; rest: string } {
-  const trimmed = raw.trim();
-  const spaceIndex = trimmed.indexOf(" ");
-  if (spaceIndex === -1) return { name: trimmed.toLowerCase(), rest: "" };
+  const match = /^(\S+)(?:\s+([\s\S]*))?$/.exec(raw.trim());
+  if (!match) return { name: "", rest: "" };
   return {
-    name: trimmed.slice(0, spaceIndex).toLowerCase(),
-    rest: trimmed.slice(spaceIndex + 1).trim(),
+    name: (match[1] ?? "").toLowerCase(),
+    rest: (match[2] ?? "").trim(),
   };
 }

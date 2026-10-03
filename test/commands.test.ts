@@ -24,6 +24,15 @@ void test("parseSubcommand lowercases name", () => {
   assert.deepEqual(parseSubcommand("Set-Label Hello"), { name: "set-label", rest: "Hello" });
 });
 
+void test("parseSubcommand splits on any whitespace and keeps the rest intact", () => {
+  assert.deepEqual(parseSubcommand("set-label\tfoo"), { name: "set-label", rest: "foo" });
+  assert.deepEqual(parseSubcommand("set-label\n  multi\nline  "), {
+    name: "set-label",
+    rest: "multi\nline",
+  });
+  assert.deepEqual(parseSubcommand("set-label   a  b"), { name: "set-label", rest: "a  b" });
+});
+
 void test("buildHelpText includes command name", () => {
   const help = buildHelpText();
   assert.match(help, new RegExp(`/${EXTENSION_COMMAND} status`));
