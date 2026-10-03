@@ -1,14 +1,25 @@
+import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 
-const rl = createInterface({ input: stdin, output: stdout });
+// Answers can be piped (one per line, blank = default) for non-interactive use:
+//   printf 'my-ext\n@me/pi-my-ext\n' | pnpm run setup-template
+
+const TEMPLATE_PACKAGE_NAME = "my-pi-extension";
+const TEMPLATE_REPO = "ayagmar/pi-extension-template";
+const DEFAULT_OWNER = "ayagmar";
+const INITIAL_VERSION = "0.0.0";
+const NPM_NAME_PATTERN = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+const GITHUB_REPO_PATTERN = /^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/;
+
+const prompt = await createPrompt();
 
 try {
   const current = await readCurrentTemplateValues();
 
   const extensionName = await ask("Extension name", current.extensionName);
-  const packageName = await ask("npm package name", current.packageName);
+  const packageName = await ask("npm package name", current.packageName, validatePackageName);
   const description = await ask("Description", current.description);
   const command = normalizeCommand(await ask("Command name", current.command));
 
@@ -19,22 +30,89 @@ try {
 
   const toolName = await ask("Tool name", defaultToolName);
   const stateType = await ask("State entry type", defaultStateType);
+  const repo = normalizeRepo(
+    await ask(
+      "GitHub repository (owner/name)",
+      defaultRepo(current.repo, packageName),
+      validateRepo
+    )
+  );
 
   await updateConstants({ extensionName, command, toolName, stateType });
-  await updatePackage({ packageName, description, extensionName });
+  await updatePackage({
+    packageName,
+    description,
+    extensionName,
+    repo,
+    isTemplate: current.isTemplate,
+  });
+  await updateReadme(current, { packageName, repo });
   await updateStarterNames(current, { command, toolName });
   await updateTestNames(current, { command, toolName });
+
+  if (current.isTemplate) {
+    await writeFile("CHANGELOG.md", "# Changelog\n");
+  }
 
   stdout.write("\nTemplate setup complete.\n");
   stdout.write("Run `pnpm run check` next.\n");
 } finally {
-  rl.close();
+  prompt.close();
 }
 
-async function ask(label, fallback) {
-  const value = await rl.question(`${label} [${fallback}]: `);
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : fallback;
+async function createPrompt() {
+  if (stdin.isTTY) {
+    const rl = createInterface({ input: stdin, output: stdout });
+    return { interactive: true, question: (text) => rl.question(text), close: () => rl.close() };
+  }
+
+  const chunks = [];
+  for await (const chunk of stdin) {
+    chunks.push(chunk);
+  }
+  const lines = Buffer.concat(chunks).toString("utf8").split(/\r?\n/);
+
+  return {
+    interactive: false,
+    question: (text) => {
+      const answer = lines.shift() ?? "";
+      stdout.write(`${text}${answer}\n`);
+      return Promise.resolve(answer);
+    },
+    close: () => undefined,
+  };
+}
+
+async function ask(label, fallback, validate) {
+  for (;;) {
+    const value = (await prompt.question(`${label} [${fallback}]: `)).trim();
+    const answer = value.length > 0 ? value : fallback;
+    const error = validate?.(answer);
+
+    if (!error) return answer;
+    if (!prompt.interactive) throw new Error(`${label}: ${error}`);
+    stdout.write(`  ${error}\n`);
+  }
+}
+
+function validatePackageName(value) {
+  return NPM_NAME_PATTERN.test(value) && value.length <= 214
+    ? undefined
+    : `"${value}" is not a valid npm package name (lowercase, optional @scope/)`;
+}
+
+function validateRepo(value) {
+  return GITHUB_REPO_PATTERN.test(normalizeRepo(value))
+    ? undefined
+    : `"${value}" is not a GitHub repository (expected owner/name)`;
+}
+
+function normalizeRepo(value) {
+  return value
+    .trim()
+    .replace(/^(?:git\+)?(?:https?:\/\/|ssh:\/\/git@|git@)?github\.com[/:]/, "")
+    .replace(/\.git$/, "")
+    .replace(/\/+$/, "");
 }
 
 function normalizeCommand(value) {
@@ -47,23 +125,55 @@ function normalizeCommand(value) {
   return cleaned.length > 0 ? cleaned : "myext";
 }
 
+function unscopedName(packageName) {
+  return packageName.replace(/^@[^/]+\//, "");
+}
+
+function defaultRepo(currentRepo, packageName) {
+  const origin = readGitOriginRepo();
+  if (origin && origin !== TEMPLATE_REPO) return origin;
+  if (currentRepo && currentRepo !== TEMPLATE_REPO) return currentRepo;
+
+  const owner = currentRepo?.split("/")[0] ?? DEFAULT_OWNER;
+  return `${owner}/${unscopedName(packageName)}`;
+}
+
+function readGitOriginRepo() {
+  try {
+    const url = execFileSync("git", ["config", "--get", "remote.origin.url"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const repo = normalizeRepo(url);
+    return GITHUB_REPO_PATTERN.test(repo) ? repo : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function readCurrentTemplateValues() {
   const constants = await readFile("src/constants.ts", "utf8");
   const pkg = JSON.parse(await readFile("package.json", "utf8"));
 
   const command = readConst(constants, "EXTENSION_COMMAND", "myext");
+  const repositoryUrl = typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url;
+  const repo = typeof repositoryUrl === "string" ? normalizeRepo(repositoryUrl) : undefined;
 
   return {
-    extensionName: readConst(constants, "EXTENSION_NAME", "my-pi-extension"),
+    extensionName: readConst(constants, "EXTENSION_NAME", TEMPLATE_PACKAGE_NAME),
     command,
     toolName: readConst(constants, "TOOL_NAME", `${command}_echo`),
     stateType: readConst(constants, "STATE_ENTRY_TYPE", `${command}:state`),
     packageName:
-      typeof pkg.name === "string" && pkg.name.trim().length > 0 ? pkg.name : "my-pi-extension",
+      typeof pkg.name === "string" && pkg.name.trim().length > 0 ? pkg.name : TEMPLATE_PACKAGE_NAME,
     description:
       typeof pkg.description === "string" && pkg.description.trim().length > 0
         ? pkg.description
         : "Starter template for building robust Pi extensions",
+    repo: repo && GITHUB_REPO_PATTERN.test(repo) ? repo : undefined,
+    // The template is marked private so it can never be published. Only a first setup run
+    // (still private) resets the version and changelog; re-runs keep release history intact.
+    isTemplate: pkg.private === true,
   };
 }
 
@@ -84,18 +194,48 @@ async function updateConstants({ extensionName, command, toolName, stateType }) 
   await writeFile(path, content);
 }
 
-async function updatePackage({ packageName, description, extensionName }) {
+async function updatePackage({ packageName, description, extensionName, repo, isTemplate }) {
   const path = "package.json";
-  const pkg = JSON.parse(await readFile(path, "utf8"));
+  const { private: _private, ...pkg } = JSON.parse(await readFile(path, "utf8"));
 
   pkg.name = packageName;
   pkg.description = description;
+
+  if (isTemplate) {
+    pkg.version = INITIAL_VERSION;
+  }
+
+  if (Array.isArray(pkg.keywords)) {
+    pkg.keywords = pkg.keywords.filter((keyword) => keyword !== "template");
+  }
+
+  pkg.repository = { type: "git", url: `git+https://github.com/${repo}.git` };
+  pkg.homepage = `https://github.com/${repo}#readme`;
+  pkg.bugs = { url: `https://github.com/${repo}/issues` };
 
   if (pkg.pi?.image && typeof pkg.pi.image === "string") {
     pkg.pi.image = `https://placehold.co/1200x630/png?text=${encodeURIComponent(extensionName)}`;
   }
 
   await writeFile(path, `${JSON.stringify(pkg, null, 2)}\n`);
+}
+
+async function updateReadme(previous, next) {
+  const path = "README.md";
+  let content;
+
+  try {
+    content = await readFile(path, "utf8");
+  } catch {
+    return;
+  }
+
+  content = content.split(`npm:${previous.packageName}`).join(`npm:${next.packageName}`);
+
+  const previousRepo = previous.repo ?? TEMPLATE_REPO;
+  content = content.split(`github.com/${previousRepo}`).join(`github.com/${next.repo}`);
+
+  await writeFile(path, content);
 }
 
 async function updateStarterNames(previous, next) {
