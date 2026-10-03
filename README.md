@@ -5,8 +5,9 @@ A practical starter for building Pi extensions that are easy to ship, test, and 
 ## What you get
 
 - Strict TypeScript + Biome
-- Unit tests + smoke test
-- GitHub Actions CI with individual step reporting
+- Unit tests + a smoke test that loads the package through the real pi CLI
+- GitHub Actions CI (`pnpm run check` + `npm pack --dry-run`) and Dependabot
+- A Release workflow: release-it + Conventional Commits changelog + npm trusted publishing
 - A minimal default extension in `src/index.ts`
 - Multiple architecture starters in `starters/`
 - Pi 0.63.x-compatible extension patterns
@@ -171,6 +172,7 @@ pnpm run lint:fix
 pnpm run format
 pnpm run format:check
 pnpm run check
+pnpm run release:dry
 ```
 
 ## Testing notes
@@ -194,6 +196,27 @@ For gallery previews, set `pi.image` or `pi.video` in `package.json`.
 See [packages.md](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/packages.md#gallery-metadata).
 
 Package gallery: [shittycodingagent.ai/packages](https://shittycodingagent.ai/packages)
+
+## Releasing
+
+Releases are cut from GitHub Actions — never from a laptop.
+
+1. Merge Conventional Commits (`feat:`, `fix:`, `feat!:` …) into `master`.
+2. Run **Actions → Release → Run workflow** (or `gh workflow run release.yml -f increment=auto`).
+   `auto` derives the bump from the commits; pick `patch`/`minor`/`major` to override. Tick `dry_run` to preview.
+3. The workflow runs `pnpm run check`, then release-it bumps `package.json`, updates `CHANGELOG.md`,
+   tags `vX.Y.Z`, pushes and creates the GitHub release, and finally `npm publish` publishes with
+   provenance through npm trusted publishing (OIDC — no npm token stored in the repo).
+
+Preview locally with `pnpm release:dry`.
+
+This template itself is `"private": true` and the Release workflow refuses to run for a private
+package, so `my-pi-extension` is never published. `pnpm run setup-template` removes the flag.
+
+The first publish of a new package cannot use trusted publishing yet (the package must exist on
+npm first): run the workflow once with `bootstrap: true` and a short-lived, publish-only
+`NPM_TOKEN` repository secret, then configure trusted publishing on npmjs.com
+(GitHub Actions · repo · workflow `release.yml`) and delete the secret.
 
 ## License
 
