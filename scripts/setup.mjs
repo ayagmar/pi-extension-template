@@ -14,6 +14,11 @@ const TEMPLATE_ONLY_TEST = "test/setup.test.ts";
 const NPM_NAME_PATTERN = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 const GITHUB_REPO_PATTERN = /^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/;
 
+// A double- or single-quoted string literal (Biome switches to single quotes when that needs
+// fewer escapes), optionally on the next line when the declaration is too long for one.
+const STRING_LITERAL = String.raw`("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')`;
+const MAX_LINE_WIDTH = 100;
+
 const prompt = createPrompt();
 
 try {
@@ -182,9 +187,23 @@ async function readCurrentTemplateValues() {
   };
 }
 
+function constPattern(constName) {
+  return new RegExp(`export const ${constName} =\\s*${STRING_LITERAL};`);
+}
+
 function readConst(content, constName, fallback) {
-  const match = content.match(new RegExp(`export const ${constName} = "([^"]*)";`));
-  return match?.[1] ?? fallback;
+  const literal = content.match(constPattern(constName))?.[1];
+  if (literal === undefined) return fallback;
+
+  // Rewrite the literal as a JSON string (\' needs no escape, " does) and let JSON decode it.
+  const body = literal
+    .slice(1, -1)
+    .replace(/\\.|"/g, (token) => (token === "\\'" ? "'" : token === '"' ? '\\"' : token));
+  try {
+    return JSON.parse(`"${body}"`);
+  } catch {
+    return fallback;
+  }
 }
 
 async function updateConstants({ extensionName, command, toolName, stateType }) {
@@ -284,9 +303,22 @@ function replaceTemplateNames(content, previous, next) {
 }
 
 function replaceConst(content, constName, value) {
-  const escaped = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  const pattern = new RegExp(`(export const ${constName} = )"[^"]*";`);
-  return content.replace(pattern, `$1"${escaped}";`);
+  const declaration = `export const ${constName} =`;
+  const literal = toStringLiteral(value);
+  const oneLine = `${declaration} ${literal};`;
+  // Lay the declaration out the way Biome formats it so `pnpm run check` passes right away.
+  const formatted = oneLine.length <= MAX_LINE_WIDTH ? oneLine : `${declaration}\n  ${literal};`;
+  // A replacer function, so `$&`, `$1`, … in the value are inserted literally.
+  return content.replace(constPattern(constName), () => formatted);
+}
+
+/** Quote like Biome: double quotes, unless the value holds more double than single quotes. */
+function toStringLiteral(value) {
+  const doubles = value.split('"').length - 1;
+  const singles = value.split("'").length - 1;
+  const quote = doubles > singles ? "'" : '"';
+  const escaped = value.replace(/\\/g, "\\\\").replaceAll(quote, `\\${quote}`);
+  return `${quote}${escaped}${quote}`;
 }
 
 async function updateTestNames(previous, next) {

@@ -4,7 +4,7 @@ import { access, cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SKIPPED = new Set(["node_modules", ".git"]);
@@ -79,6 +79,32 @@ function runSetupWithOpenStdin(dir: string, answers: string[]) {
       });
     }
   );
+}
+
+async function readExtensionName(constantsPath: string): Promise<string> {
+  const { EXTENSION_NAME } = (await import(
+    `${pathToFileURL(constantsPath).href}?t=${Date.now()}`
+  )) as {
+    EXTENSION_NAME: string;
+  };
+  return EXTENSION_NAME;
+}
+
+function assertBiomeFormatted(dir: string, file: string) {
+  const biome = join(root, "node_modules", "@biomejs", "biome", "bin", "biome");
+  const result = spawnSync(process.execPath, [biome, "format", "--vcs-enabled=false", file], {
+    cwd: dir,
+    encoding: "utf8",
+  });
+  assert.equal(
+    result.status,
+    0,
+    `${file} is not Biome-formatted:\n${result.stdout}${result.stderr}`
+  );
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 async function readPackage(dir: string): Promise<PackageJson> {
@@ -177,6 +203,30 @@ void test("setup-template rewrites the starters that are left after unused ones 
 
     assert.match(await readFile(join(dir, "starters/tool-only.ts"), "utf8"), /"baz_echo"/);
     assert.match(await readFile(join(dir, "src/constants.ts"), "utf8"), /TOOL_NAME = "baz_echo"/);
+  });
+});
+
+void test("setup-template writes Biome-formatted constants that survive a re-run", async () => {
+  await withTemplateCopy(async (dir) => {
+    // Quotes and `$&` used to corrupt src/constants.ts (and get lost on the next run); a long
+    // value used to leave a line Biome reformats, failing `pnpm run check`.
+    const quoted = `Tom's "quoted" $& \\ ext`;
+    const doubleQuoted = `Say "hi" $1`;
+    const long = `pi ${"very ".repeat(16)}long extension`;
+    const constantsPath = join(dir, "src/constants.ts");
+
+    for (const name of [quoted, doubleQuoted, long]) {
+      const first = runSetup(dir, [name, "pi-quote", "", "quote", "", "", ""]);
+      assert.equal(first.status, 0, first.stderr);
+      assert.equal(await readExtensionName(constantsPath), name);
+      assertBiomeFormatted(dir, "src/constants.ts");
+
+      // A re-run offers the stored name as the default and keeps it.
+      const rerun = runSetup(dir, ["", "", "", "", "", "", ""]);
+      assert.equal(rerun.status, 0, rerun.stderr);
+      assert.match(rerun.stdout, new RegExp(`Extension name \\[${escapeRegExp(name)}\\]`));
+      assert.equal(await readExtensionName(constantsPath), name);
+    }
   });
 });
 
