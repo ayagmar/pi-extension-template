@@ -13,6 +13,8 @@ const INITIAL_VERSION = "0.0.0";
 const TEMPLATE_ONLY_TEST = "test/setup.test.ts";
 const NPM_NAME_PATTERN = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 const GITHUB_REPO_PATTERN = /^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/;
+// LLM providers reject tool names outside 1-64 characters of [A-Za-z0-9_-].
+const TOOL_NAME_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 // A double- or single-quoted string literal (Biome switches to single quotes when that needs
 // fewer escapes), optionally on the next line when the declaration is too long for one.
@@ -34,7 +36,7 @@ try {
   const defaultStateType =
     current.stateType === `${current.command}:state` ? `${command}:state` : current.stateType;
 
-  const toolName = await ask("Tool name", defaultToolName);
+  const toolName = await ask("Tool name", defaultToolName, validateToolName);
   const stateType = await ask("State entry type", defaultStateType);
   const repo = normalizeRepo(
     await ask(
@@ -109,6 +111,12 @@ function validatePackageName(value) {
   return NPM_NAME_PATTERN.test(value) && value.length <= 214
     ? undefined
     : `"${value}" is not a valid npm package name (lowercase, optional @scope/)`;
+}
+
+function validateToolName(value) {
+  return TOOL_NAME_PATTERN.test(value)
+    ? undefined
+    : `"${value}" is not a valid tool name (up to 64 letters, digits, _ or -)`;
 }
 
 function validateRepo(value) {
