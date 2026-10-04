@@ -204,9 +204,11 @@ async function readCurrentTemplateValues() {
         ? pkg.description
         : "Starter template for building robust Pi extensions",
     repo: repo && GITHUB_REPO_PATTERN.test(repo) ? repo : undefined,
-    // The template is marked private so it can never be published. Only a first setup run
-    // (still private) resets the version and changelog; re-runs keep release history intact.
-    isTemplate: pkg.private === true,
+    // The template is private and still named (or still points at) the template, so it can
+    // never be published. Only a first setup run resets the version and changelog and drops the
+    // private flag; re-runs keep release history and a private flag the user set themselves.
+    isTemplate:
+      pkg.private === true && (pkg.name === TEMPLATE_PACKAGE_NAME || repo === TEMPLATE_REPO),
   };
 }
 
@@ -246,8 +248,9 @@ async function updatePackage({ packageName, description, extensionName, repo, is
   const pkg = JSON.parse(await readFile(path, "utf8"));
 
   pkg.name = packageName;
-  // Backstop to validatePackageName: the placeholder package must never become publishable.
-  if (packageName !== TEMPLATE_PACKAGE_NAME) {
+  // Only the template's own flag is removed (validatePackageName already refuses the
+  // placeholder name), so a package the user made private on purpose stays private.
+  if (isTemplate) {
     delete pkg.private;
   }
   pkg.description = description;

@@ -32,7 +32,8 @@ pnpm run setup-template
 
 This updates `src/constants.ts`, starter files and `package.json` (name, description,
 repository/homepage/bugs URLs), resets `version` and `CHANGELOG.md`, and removes the
-template-only `"private": true` flag so the package can be published.
+template-only `"private": true` flag so the package can be published. Re-running it later only
+renames; it keeps your version, `CHANGELOG.md` and any `"private": true` you added yourself.
 
 5. Finish the rename pass manually.
 
