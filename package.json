@@ -22,7 +22,6 @@
   "main": "./src/index.ts",
   "files": [
     "src/",
-    "starters/",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
