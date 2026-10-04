@@ -108,6 +108,9 @@ async function ask(label, fallback, validate) {
 }
 
 function validatePackageName(value) {
+  if (value === TEMPLATE_PACKAGE_NAME) {
+    return `"${value}" is the template's placeholder; choose your own npm package name`;
+  }
   return NPM_NAME_PATTERN.test(value) && value.length <= 214
     ? undefined
     : `"${value}" is not a valid npm package name (lowercase, optional @scope/)`;
@@ -228,9 +231,13 @@ async function updateConstants({ extensionName, command, toolName, stateType }) 
 
 async function updatePackage({ packageName, description, extensionName, repo, isTemplate }) {
   const path = "package.json";
-  const { private: _private, ...pkg } = JSON.parse(await readFile(path, "utf8"));
+  const pkg = JSON.parse(await readFile(path, "utf8"));
 
   pkg.name = packageName;
+  // Backstop to validatePackageName: the placeholder package must never become publishable.
+  if (packageName !== TEMPLATE_PACKAGE_NAME) {
+    delete pkg.private;
+  }
   pkg.description = description;
 
   if (isTemplate) {
