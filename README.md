@@ -189,7 +189,8 @@ The default extension and every starter follow these rules; keep them when you b
 - **Components.** Every rendered line must fit the given width (`truncateToWidth`,
   `visibleWidth`); pi throws on wider lines. Build themed strings at render time, and use the
   injected `KeybindingsManager` (`keybindings.matches(data, "tui.select.cancel")`) instead of
-  hard-coded keys.
+  hard-coded keys; show the bound keys with `keyText("tui.select.cancel")` (or `keyHint`) from
+  `@earendil-works/pi-coding-agent`.
 - **Session state.** Rebuild it from `ctx.sessionManager.getBranch()` on `session_start` (and
   `session_tree`); branches also contain system messages and `usage`/`context_edit` entries.
   Start timers, processes or sockets from `session_start` or a command, never in the factory,

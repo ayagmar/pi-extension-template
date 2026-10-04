@@ -90,7 +90,8 @@ section has the full list):
   `ctx.ui.custom()` and other terminal components. Without a UI, report on stderr — never
   stdout.
 - Custom components: truncate every line to the render width, build themed strings at render
-  time, and use the injected keybindings (`keybindings.matches(data, "tui.select.cancel")`).
+  time, and use the injected keybindings (`keybindings.matches(data, "tui.select.cancel")`);
+  show bound keys with `keyText`/`keyHint` from pi-coding-agent, not `getKeys().join()`.
 - Rebuild session state from `ctx.sessionManager.getBranch()` in `session_start`/`session_tree`;
   start resources there (not in the factory) and release them in `session_shutdown`.
 - Tools: always set `promptSnippet`, keep `details` plain JSON, and derive argument types from

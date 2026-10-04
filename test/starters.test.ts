@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { KeybindingsManager, TUI_KEYBINDINGS, visibleWidth } from "@earendil-works/pi-tui";
+import {
+  KeybindingsManager,
+  setKeybindings,
+  TUI_KEYBINDINGS,
+  visibleWidth,
+} from "@earendil-works/pi-tui";
 import commandOnly from "../starters/command-only.js";
 import eventOnly from "../starters/event-only.js";
 import hybrid from "../starters/hybrid.js";
@@ -344,6 +349,32 @@ void test("ui-only dashboard fits narrow terminals and closes on the cancel keyb
   assert.equal(closed, 1);
   component.handleInput?.("\x03");
   assert.equal(closed, 2);
+});
+
+void test("ui-only dashboard follows the user's rebound cancel key", async (t) => {
+  const harness = createHarness();
+  uiOnly(harness.pi);
+
+  const ctx = createContext({ mode: "tui" });
+  await harness.commands.get("myext")?.handler("", ctx);
+  const factory = ctx.customFactories[0];
+  assert.ok(factory);
+
+  // pi installs the user's keybindings globally and hands the same manager to custom().
+  const keybindings = new KeybindingsManager(TUI_KEYBINDINGS, { "tui.select.cancel": "ctrl+q" });
+  setKeybindings(keybindings);
+  t.after(() => setKeybindings(new KeybindingsManager(TUI_KEYBINDINGS)));
+
+  let closed = 0;
+  const component = factory({}, plainTheme, keybindings, () => {
+    closed += 1;
+  });
+
+  assert.match(component.render(80).join("\n"), /Press ctrl\+q to close/);
+  component.handleInput?.("\x1b");
+  assert.equal(closed, 0);
+  component.handleInput?.("\x11");
+  assert.equal(closed, 1);
 });
 
 function handler(harness: Harness, eventName: string): Handler {

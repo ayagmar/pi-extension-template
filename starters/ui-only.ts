@@ -1,6 +1,7 @@
 import {
   type ExtensionAPI,
   type ExtensionContext,
+  keyText,
   type Theme,
 } from "@earendil-works/pi-coding-agent";
 import { type Component, type KeybindingsManager, truncateToWidth } from "@earendil-works/pi-tui";
@@ -74,7 +75,8 @@ function createDashboard(
 ): Component {
   return {
     render(width: number) {
-      const closeKeys = keybindings.getKeys(CLOSE_KEYBINDING).join("/");
+      // keyText formats the keys bound to the id the way pi's own hints do (e.g. "escape/ctrl+c").
+      const closeKeys = keyText(CLOSE_KEYBINDING);
       return [
         "",
         theme.fg("accent", theme.bold("  Extension Dashboard")),
