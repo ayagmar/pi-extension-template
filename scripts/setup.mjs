@@ -21,6 +21,18 @@ const TOOL_NAME_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const STRING_LITERAL = String.raw`("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')`;
 const MAX_LINE_WIDTH = 100;
 
+// Only the places that hold the command or tool name are rewritten. Replacing every matching
+// string literal would also hit subcommands such as "status" once a re-run starts from a
+// command or tool name the starters already use for something else.
+const COMMAND_SITES = [
+  String.raw`(?:registerCommand|commands\.get|setStatus|statuses\.get)\(`,
+  "STATUS_KEY = ",
+];
+const TOOL_SITES = ["(?:name|toolName): ", "toolName [!=]== ", String.raw`tools\.get\(`];
+// `/command` in user-facing text, but not a path segment such as `../starters/`.
+const SLASH_COMMAND = (command) =>
+  new RegExp(String.raw`(^|[\s"'\`])/${escapeRegExp(command)}(?=[\s"'\`]|$)`, "gm");
+
 const prompt = createPrompt();
 
 try {
@@ -305,16 +317,28 @@ function replaceTemplateNames(content, previous, next) {
 
   for (const tool of toolCandidates) {
     if (tool === next.toolName) continue;
-    updated = updated.split(`"${tool}"`).join(`"${next.toolName}"`);
+    updated = replaceAtSites(updated, TOOL_SITES, tool, next.toolName);
   }
 
   for (const command of commandCandidates) {
     if (command === next.command) continue;
-    updated = updated.split(`"${command}"`).join(`"${next.command}"`);
-    updated = updated.split(`/${command}`).join(`/${next.command}`);
+    updated = replaceAtSites(updated, COMMAND_SITES, command, next.command);
+    updated = updated.replace(
+      SLASH_COMMAND(command),
+      (_match, before) => `${before}/${next.command}`
+    );
   }
 
   return updated;
+}
+
+function replaceAtSites(content, sites, previousName, nextName) {
+  const pattern = new RegExp(`(${sites.join("|")})"${escapeRegExp(previousName)}"`, "g");
+  return content.replace(pattern, (_match, site) => `${site}${toStringLiteral(nextName)}`);
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function replaceConst(content, constName, value) {

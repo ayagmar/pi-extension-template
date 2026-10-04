@@ -206,6 +206,33 @@ void test("setup-template rewrites the starters that are left after unused ones 
   });
 });
 
+void test("setup-template re-run only rewrites the command and tool name sites", async () => {
+  await withTemplateCopy(async (dir) => {
+    // Command and tool named after a subcommand the starters already use.
+    const first = runSetup(dir, ["pi-st", "pi-st", "", "status", "status", "", ""]);
+    assert.equal(first.status, 0, first.stderr);
+    const rerun = runSetup(dir, ["", "", "", "foo", "bar", "", ""]);
+    assert.equal(rerun.status, 0, rerun.stderr);
+
+    const commandOnly = await readFile(join(dir, "starters/command-only.ts"), "utf8");
+    assert.match(commandOnly, /registerCommand\("foo"/);
+    assert.match(commandOnly, /case "status":/);
+    assert.match(commandOnly, /\["status", "enable", "disable", "mode"\]/);
+    assert.match(commandOnly, /"\/foo status \| enable/);
+
+    const hybrid = await readFile(join(dir, "starters/hybrid.ts"), "utf8");
+    assert.match(hybrid, /registerCommand\("foo"/);
+    assert.match(hybrid, /name: "bar"/);
+    assert.match(hybrid, /Usage: \/foo toggle/);
+
+    const tests = await readFile(join(dir, "test/starters.test.ts"), "utf8");
+    assert.match(tests, /command\.handler\("status", ctx\)/);
+    assert.match(tests, /commands\.get\("foo"\)/);
+    assert.match(tests, /tools\.get\("bar"\)/);
+    assert.doesNotMatch(tests, /commands\.get\("status"\)|tools\.get\("status"\)/);
+  });
+});
+
 void test("setup-template writes Biome-formatted constants that survive a re-run", async () => {
   await withTemplateCopy(async (dir) => {
     // Quotes and `$&` used to corrupt src/constants.ts (and get lost on the next run); a long
