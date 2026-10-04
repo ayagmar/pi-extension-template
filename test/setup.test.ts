@@ -241,18 +241,44 @@ void test("setup-template rejects invalid package names without touching files",
   });
 });
 
+void test("setup-template refuses to keep the placeholder package name", async () => {
+  await withTemplateCopy(async (dir) => {
+    const files = ["package.json", "CHANGELOG.md", "src/constants.ts", "test/setup.test.ts"];
+    const read = () => Promise.all(files.map((file) => readFile(join(dir, file), "utf8")));
+    const before = await read();
+
+    // Accepting every default, closing stdin right away, or typing the placeholder must all fail
+    // before anything is written: otherwise the template becomes a publishable my-pi-extension.
+    for (const answers of [["", "", "", "", "", "", ""], [], ["", "my-pi-extension"]]) {
+      const result = spawnSync(process.execPath, ["scripts/setup.mjs"], {
+        cwd: dir,
+        input: answers.length > 0 ? `${answers.join("\n")}\n` : "",
+        encoding: "utf8",
+        env: { ...process.env, GIT_CEILING_DIRECTORIES: dirname(dir) },
+      });
+      assert.notEqual(result.status, 0, JSON.stringify(answers));
+      assert.match(result.stderr, /choose your own npm package name/);
+    }
+
+    assert.deepEqual(await read(), before);
+    const pkg = await readPackage(dir);
+    assert.equal(pkg.private, true);
+    assert.equal(pkg.name, "my-pi-extension");
+  });
+});
+
 void test("setup-template rejects tool names that LLM providers refuse", async () => {
   await withTemplateCopy(async (dir) => {
     const before = await readFile(join(dir, "src/constants.ts"), "utf8");
 
     for (const toolName of ["my tool", "foo.echo", "x".repeat(65)]) {
-      const result = runSetup(dir, ["", "", "", "", toolName]);
+      const result = runSetup(dir, ["", "pi-tool", "", "", toolName]);
       assert.notEqual(result.status, 0, toolName);
       assert.match(result.stderr, /not a valid tool name/);
     }
     assert.equal(await readFile(join(dir, "src/constants.ts"), "utf8"), before);
 
-    const result = runSetup(dir, ["", "", "", "", "My-Tool_2", "", ""]);
+    const result = runSetup(dir, ["", "pi-tool", "", "", "My-Tool_2", "", ""]);
     assert.equal(result.status, 0, result.stderr);
     assert.match(await readFile(join(dir, "src/constants.ts"), "utf8"), /TOOL_NAME = "My-Tool_2"/);
   });

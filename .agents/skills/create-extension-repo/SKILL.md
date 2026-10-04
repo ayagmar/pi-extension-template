@@ -61,7 +61,8 @@ repository (defaults to the clone's `origin`). It rewrites `src/constants.ts`, t
 `package.json` (`name`, `description`, `repository`, `homepage`, `bugs`), the README install
 sources, resets `version` to `0.0.0` and `CHANGELOG.md`, and removes the template-only
 `"private": true` flag. When driving it non-interactively, pipe one answer per line (blank line =
-default), e.g. `printf 'pi-foo\n@ayagmar/pi-foo\n' | pnpm run setup-template`.
+default), e.g. `printf 'pi-foo\n@ayagmar/pi-foo\n' | pnpm run setup-template`. The npm package
+name has no usable default: setup refuses the placeholder `my-pi-extension` and writes nothing.
 
 Then remind them to review identifiers in:
 

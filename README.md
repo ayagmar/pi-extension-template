@@ -266,7 +266,8 @@ Releases are cut from GitHub Actions — never from a laptop.
 Preview locally with `pnpm release:dry`.
 
 This template itself is `"private": true` and the Release workflow refuses to run for a private
-package, so `my-pi-extension` is never published. `pnpm run setup-template` removes the flag.
+package, so `my-pi-extension` is never published. `pnpm run setup-template` removes the flag,
+and refuses to keep the placeholder `my-pi-extension` package name.
 
 The first publish of a new package cannot use trusted publishing yet (the package must exist on
 npm first): run the workflow once with `bootstrap: true` and a short-lived, publish-only
