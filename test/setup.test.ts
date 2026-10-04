@@ -194,6 +194,58 @@ void test("setup-template re-run keeps release history and normalizes repo URLs"
   });
 });
 
+void test("setup-template re-run keeps a private flag, version and changelog the user set", async () => {
+  await withTemplateCopy(async (dir) => {
+    const pkgPath = join(dir, "package.json");
+    const template = await readPackage(dir);
+    await writeFile(
+      pkgPath,
+      `${JSON.stringify(
+        {
+          ...template,
+          name: "pi-foo",
+          version: "1.2.3",
+          private: true,
+          repository: { type: "git", url: "git+https://github.com/me/pi-foo.git" },
+        },
+        null,
+        2
+      )}\n`
+    );
+    const changelog = "# Changelog\n\n## 1.2.3\n\n- shipped\n";
+    await writeFile(join(dir, "CHANGELOG.md"), changelog);
+
+    const result = runSetup(dir, ["", "", "", "bar", "", "", ""]);
+    assert.equal(result.status, 0, result.stderr);
+
+    const pkg = await readPackage(dir);
+    assert.equal(pkg.name, "pi-foo");
+    assert.equal(pkg.version, "1.2.3");
+    assert.equal(pkg.private, true);
+    assert.equal(await readFile(join(dir, "CHANGELOG.md"), "utf8"), changelog);
+    await access(join(dir, "test/setup.test.ts"));
+  });
+});
+
+void test("setup-template still treats a renamed but untouched template copy as a first run", async () => {
+  await withTemplateCopy(async (dir) => {
+    const template = await readPackage(dir);
+    await writeFile(
+      join(dir, "package.json"),
+      `${JSON.stringify({ ...template, name: "pi-foo" }, null, 2)}\n`
+    );
+    await writeFile(join(dir, "CHANGELOG.md"), "# Changelog\n\n## 0.1.0\n\n- template history\n");
+
+    const result = runSetup(dir, ["", "", "", "", "", "", "me/pi-foo"]);
+    assert.equal(result.status, 0, result.stderr);
+
+    const pkg = await readPackage(dir);
+    assert.equal(pkg.version, "0.0.0");
+    assert.equal(pkg.private, undefined);
+    assert.equal(await readFile(join(dir, "CHANGELOG.md"), "utf8"), "# Changelog\n");
+  });
+});
+
 void test("setup-template rewrites the starters that are left after unused ones are deleted", async () => {
   await withTemplateCopy(async (dir) => {
     for (const unused of ["event-only.ts", "hybrid.ts", "ui-only.ts", "command-only.ts"]) {
