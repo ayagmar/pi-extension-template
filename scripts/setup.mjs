@@ -14,7 +14,7 @@ const TEMPLATE_ONLY_TEST = "test/setup.test.ts";
 const NPM_NAME_PATTERN = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 const GITHUB_REPO_PATTERN = /^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/;
 
-const prompt = await createPrompt();
+const prompt = createPrompt();
 
 try {
   const current = await readCurrentTemplateValues();
@@ -63,26 +63,28 @@ try {
   prompt.close();
 }
 
-async function createPrompt() {
+function createPrompt() {
   if (stdin.isTTY) {
     const rl = createInterface({ input: stdin, output: stdout });
     return { interactive: true, question: (text) => rl.question(text), close: () => rl.close() };
   }
 
-  const chunks = [];
-  for await (const chunk of stdin) {
-    chunks.push(chunk);
-  }
-  const lines = Buffer.concat(chunks).toString("utf8").split(/\r?\n/);
+  // Not a TTY: piped answers, but also Git Bash/mintty, IDE consoles or agent shells that keep
+  // stdin open. Read line by line so every prompt shows up right away; lines that arrive early
+  // are buffered by the iterator, and EOF means "use the defaults" for the remaining prompts.
+  const rl = createInterface({ input: stdin, crlfDelay: Number.POSITIVE_INFINITY });
+  const lines = rl[Symbol.asyncIterator]();
 
   return {
     interactive: false,
-    question: (text) => {
-      const answer = lines.shift() ?? "";
-      stdout.write(`${text}${answer}\n`);
-      return Promise.resolve(answer);
+    question: async (text) => {
+      stdout.write(text);
+      const { value, done } = await lines.next();
+      const answer = done ? "" : value;
+      stdout.write(`${answer}\n`);
+      return answer;
     },
-    close: () => undefined,
+    close: () => rl.close(),
   };
 }
 

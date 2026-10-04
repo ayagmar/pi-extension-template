@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { access, cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
@@ -41,6 +41,44 @@ function runSetup(dir: string, answers: string[]) {
     // Keep git from discovering an enclosing repository's origin.
     env: { ...process.env, GIT_CEILING_DIRECTORIES: dirname(dir) },
   });
+}
+
+// Like runSetup, but keeps stdin open (as Git Bash, IDE consoles and agent shells do) and only
+// sends the answers once the first prompt has been printed.
+function runSetupWithOpenStdin(dir: string, answers: string[]) {
+  return new Promise<{ code: number | null; promptedBeforeInput: boolean; stdout: string }>(
+    (resolvePromise, reject) => {
+      const child = spawn(process.execPath, ["scripts/setup.mjs"], {
+        cwd: dir,
+        env: { ...process.env, GIT_CEILING_DIRECTORIES: dirname(dir) },
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      let stdout = "";
+      let stderr = "";
+      let promptedBeforeInput = false;
+      const timer = setTimeout(() => {
+        child.kill("SIGKILL");
+        reject(new Error(`setup printed no prompt while stdin was open:\n${stdout}${stderr}`));
+      }, 10_000);
+
+      child.stdout.setEncoding("utf8");
+      child.stdout.on("data", (chunk: string) => {
+        stdout += chunk;
+        if (!promptedBeforeInput && stdout.includes("Extension name [")) {
+          promptedBeforeInput = true;
+          child.stdin.end(`${answers.join("\n")}\n`);
+        }
+      });
+      child.stderr.on("data", (chunk) => {
+        stderr += chunk;
+      });
+      child.on("error", reject);
+      child.on("close", (code) => {
+        clearTimeout(timer);
+        resolvePromise({ code, promptedBeforeInput, stdout: `${stdout}${stderr}` });
+      });
+    }
+  );
 }
 
 async function readPackage(dir: string): Promise<PackageJson> {
@@ -150,5 +188,18 @@ void test("setup-template rejects invalid package names without touching files",
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /not a valid npm package name/);
     assert.equal(await readFile(join(dir, "package.json"), "utf8"), before);
+  });
+});
+
+void test("setup-template prompts right away when stdin is not a TTY but stays open", async () => {
+  await withTemplateCopy(async (dir) => {
+    const result = await runSetupWithOpenStdin(dir, ["pi-qux", "pi-qux", "", "qux", "", "", ""]);
+    assert.ok(result.promptedBeforeInput);
+    assert.equal(result.code, 0, result.stdout);
+    assert.equal((await readPackage(dir)).name, "pi-qux");
+    assert.match(
+      await readFile(join(dir, "src/constants.ts"), "utf8"),
+      /EXTENSION_COMMAND = "qux"/
+    );
   });
 });
