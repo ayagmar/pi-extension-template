@@ -30,7 +30,9 @@ Then delete `test/extension.test.ts` (it tests the default extension you replace
 pnpm run check
 ```
 
-After you pick a starter for the real extension, delete the unused starter files before publishing.
+After you pick a starter for the real extension, delete the unused starter files and their tests
+in `test/starters.test.ts` (imports included, or `pnpm run check` fails to find the deleted
+modules). `test/starters-load.test.ts` follows whatever remains in `starters/`.
 
 ## Setup order
 
