@@ -67,7 +67,8 @@ After you finish renaming, these are usually not meant to ship forever:
   test, `test/bootstrap-skill.test.ts`
 
 Remove them once the extension has been renamed and you no longer need template bootstrapping.
-Also delete unused starter files and starter-specific tests before publishing a real extension package.
+Also delete unused starter files and their tests in `test/starters.test.ts`. Starters are never
+packed (`files` ships only `src/`), so this keeps the repo and its checks focused, not the tarball.
 
 ## Repo-local bootstrap skill
 

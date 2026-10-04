@@ -15,6 +15,7 @@ interface PackageJson {
   private?: boolean;
   description: string;
   keywords: string[];
+  files: string[];
   repository: { type: string; url: string };
   homepage: string;
   bugs: { url: string };
@@ -131,6 +132,8 @@ void test("setup-template turns the template into a publishable scoped package",
     assert.equal(pkg.description, "Foo things");
     assert.ok(!pkg.keywords.includes("template"));
     assert.ok(pkg.keywords.includes("pi-package"));
+    // Starters are examples to copy, never loaded at runtime, so they stay out of the tarball.
+    assert.deepEqual(pkg.files, ["src/", "README.md", "CHANGELOG.md", "LICENSE"]);
     assert.deepEqual(pkg.repository, {
       type: "git",
       url: "git+https://github.com/ayagmar/pi-foo.git",
